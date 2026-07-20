@@ -1,0 +1,19 @@
+[package]
+name = "zk-ai-go-ffi"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+description = "C ABI for zk-ai Go cgo binding (server-side offload)"
+
+[lib]
+name = "zk_ai_go_ffi"
+crate-type = ["staticlib", "cdylib"]
+
+[dependencies]
+zk-ai-core = { path = "../core" }
+tokio = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }

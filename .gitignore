@@ -1,0 +1,72 @@
+# ─── macOS ───────────────────────────────────────────────
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# ─── Windows ─────────────────────────────────────────────
+Thumbs.db
+Desktop.ini
+
+# ─── Linux ───────────────────────────────────────────────
+*~
+.fuse_hidden*
+
+# ─── IDE / Editor ────────────────────────────────────────
+.idea/
+.vscode/
+*.swp
+*.swo
+*.sublime-workspace
+*.sublime-project
+
+# ─── Rust ────────────────────────────────────────────────
+target/
+
+# ─── Node.js / TypeScript ────────────────────────────────
+node_modules/
+dist/
+*.tsbuildinfo
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ─── Go ──────────────────────────────────────────────────
+server/bin/
+*.exe
+*.test
+*.out
+
+# ─── Environment & Secrets ───────────────────────────────
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+
+# ─── Logs ────────────────────────────────────────────────
+*.log
+logs/
+
+# ─── Downloaded model binaries (keep registry.toml) ──────
+models/*.bin
+models/*.onnx
+models/*.gguf
+models/*.pt
+models/*.safetensors
+models/*.tar.gz
+models/*.zip
+
+# ─── Build artifacts (FFI / WASM / N-API) ────────────────
+*.so
+*.dylib
+*.dll
+*.a
+*.wasm
+crates/*/build/
+crates/*/dist/

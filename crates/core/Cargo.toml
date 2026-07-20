@@ -1,0 +1,59 @@
+[package]
+name = "zk-ai-core"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+description = "Core inference engine, device profiler, model manager, and resource governor for zk-ai"
+
+[lib]
+name = "zk_ai_core"
+crate-type = ["lib", "staticlib", "cdylib"]
+
+[features]
+default = []
+real-models = []
+cuda = ["ort/cuda"]
+coreml = ["ort/coreml"]
+directml = ["ort/directml"]
+nnapi = ["ort/nnapi"]
+
+[dependencies]
+tokio = { workspace = true }
+futures = { workspace = true }
+async-trait = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+toml = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+ort = { workspace = true, features = ["download-binaries", "half", "ndarray", "std"] }
+ndarray = { workspace = true }
+tokenizers = { workspace = true, features = ["onig"] }
+sha2 = { workspace = true }
+hex = { workspace = true }
+uuid = { workspace = true }
+chrono = { workspace = true }
+getrandom = "0.2"
+
+[dev-dependencies]
+tempfile = { workspace = true }
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+# WASM-specific: no ort binary download, use wasm-compatible features
+ort = { workspace = true, features = ["half", "ndarray", "std"] }
+getrandom = { version = "0.2", features = ["js"] }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+# Native: enable ort with all native backends
+ort = { workspace = true, features = ["download-binaries", "half", "ndarray", "std", "cuda", "coreml", "directml", "nnapi"] }
+reqwest = { workspace = true }
+
+[target.'cfg(all(unix, not(target_arch = "wasm32")))'.dependencies]
+libc = { workspace = true }
+
+[target.'cfg(all(target_os = "windows", not(target_arch = "wasm32")))'.dependencies]
+windows-sys = { version = "0.59", features = ["Win32_System_SystemInformation", "Win32_System_Threading", "Win32_Foundation"] }

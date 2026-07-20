@@ -1,0 +1,295 @@
+# zk-ai model registry.
+#
+# Defines all models and LoRA adapters available in the zk-ai ecosystem.
+# The model manager reads this to know which models to download, their
+# sizes, tier requirements, and which tasks they support.
+
+[[models]]
+name = "mt5-small"
+version = "1.0.0"
+base = true
+formats = ["onnx"]
+quantizations = ["int8", "int4", "fp16"]
+sizes = { int8 = "45MB", int4 = "25MB", fp16 = "120MB" }
+languages = ["en", "vi", "th", "ar", "zh", "es"]
+min_tier = "low"
+tasks = ["summarize", "translate", "key_points", "generate_doc", "generate_slides"]
+
+[[models]]
+name = "multilingual-e5-small"
+version = "1.0.0"
+base = true
+formats = ["onnx"]
+quantizations = ["int8"]
+sizes = { int8 = "45MB" }
+languages = ["en", "vi", "th", "ar", "zh", "es"]
+min_tier = "low"
+tasks = ["embed", "search"]
+
+[[models]]
+name = "clip-vit-base-patch32"
+version = "1.0.0"
+base = true
+formats = ["onnx"]
+quantizations = ["int8", "fp16"]
+sizes = { int8 = "60MB", fp16 = "150MB" }
+min_tier = "mid"
+tasks = ["image_search"]
+
+# ─── LoRA Adapters ──────────────────────────────────────────────────
+# Each adapter is a small (3-5MB) file that specializes the mT5-small
+# base model for a specific task + language. Adapters are hot-swapped
+# at runtime (<10ms).
+
+# Summarization adapters (6 languages)
+[[adapters]]
+task = "summarize"
+language = "en"
+version = "1.0.0"
+size = "3.5MB"
+base_model = "mt5-small"
+
+[[adapters]]
+task = "summarize"
+language = "vi"
+version = "1.0.0"
+size = "3.5MB"
+base_model = "mt5-small"
+
+[[adapters]]
+task = "summarize"
+language = "th"
+version = "1.0.0"
+size = "3.5MB"
+base_model = "mt5-small"
+
+[[adapters]]
+task = "summarize"
+language = "ar"
+version = "1.0.0"
+size = "3.5MB"
+base_model = "mt5-small"
+
+[[adapters]]
+task = "summarize"
+language = "zh"
+version = "1.0.0"
+size = "3.5MB"
+base_model = "mt5-small"
+
+[[adapters]]
+task = "summarize"
+language = "es"
+version = "1.0.0"
+size = "3.5MB"
+base_model = "mt5-small"
+
+# Key-point extraction adapters (6 languages)
+[[adapters]]
+task = "keypoints"
+language = "en"
+version = "1.0.0"
+size = "4MB"
+base_model = "mt5-small"
+
+[[adapters]]
+task = "keypoints"
+language = "vi"
+version = "1.0.0"
+size = "4MB"
+base_model = "mt5-small"
+
+[[adapters]]
+task = "keypoints"
+language = "th"
+version = "1.0.0"
+size = "4MB"
+base_model = "mt5-small"
+
+[[adapters]]
+task = "keypoints"
+language = "ar"
+version = "1.0.0"
+size = "4MB"
+base_model = "mt5-small"
+
+[[adapters]]
+task = "keypoints"
+language = "zh"
+version = "1.0.0"
+size = "4MB"
+base_model = "mt5-small"
+
+[[adapters]]
+task = "keypoints"
+language = "es"
+version = "1.0.0"
+size = "4MB"
+base_model = "mt5-small"
+
+# Translation adapters (key language pairs)
+[[adapters]]
+task = "translate"
+source = "vi"
+target = "en"
+version = "1.0.0"
+size = "3.2MB"
+base_model = "mt5-small"
+
+[[adapters]]
+task = "translate"
+source = "en"
+target = "vi"
+version = "1.0.0"
+size = "3.2MB"
+base_model = "mt5-small"
+
+[[adapters]]
+task = "translate"
+source = "th"
+target = "en"
+version = "1.0.0"
+size = "3.2MB"
+base_model = "mt5-small"
+
+[[adapters]]
+task = "translate"
+source = "en"
+target = "th"
+version = "1.0.0"
+size = "3.2MB"
+base_model = "mt5-small"
+
+[[adapters]]
+task = "translate"
+source = "ar"
+target = "en"
+version = "1.0.0"
+size = "3.2MB"
+base_model = "mt5-small"
+
+[[adapters]]
+task = "translate"
+source = "en"
+target = "ar"
+version = "1.0.0"
+size = "3.2MB"
+base_model = "mt5-small"
+
+[[adapters]]
+task = "translate"
+source = "zh"
+target = "en"
+version = "1.0.0"
+size = "3.2MB"
+base_model = "mt5-small"
+
+[[adapters]]
+task = "translate"
+source = "en"
+target = "zh"
+version = "1.0.0"
+size = "3.2MB"
+base_model = "mt5-small"
+
+[[adapters]]
+task = "translate"
+source = "es"
+target = "en"
+version = "1.0.0"
+size = "3.2MB"
+base_model = "mt5-small"
+
+[[adapters]]
+task = "translate"
+source = "en"
+target = "es"
+version = "1.0.0"
+size = "3.2MB"
+base_model = "mt5-small"
+
+# Document generation adapters (6 languages)
+[[adapters]]
+task = "gendoc"
+language = "en"
+version = "1.0.0"
+size = "5MB"
+base_model = "mt5-small"
+
+[[adapters]]
+task = "gendoc"
+language = "vi"
+version = "1.0.0"
+size = "5MB"
+base_model = "mt5-small"
+
+[[adapters]]
+task = "gendoc"
+language = "th"
+version = "1.0.0"
+size = "5MB"
+base_model = "mt5-small"
+
+[[adapters]]
+task = "gendoc"
+language = "ar"
+version = "1.0.0"
+size = "5MB"
+base_model = "mt5-small"
+
+[[adapters]]
+task = "gendoc"
+language = "zh"
+version = "1.0.0"
+size = "5MB"
+base_model = "mt5-small"
+
+[[adapters]]
+task = "gendoc"
+language = "es"
+version = "1.0.0"
+size = "5MB"
+base_model = "mt5-small"
+
+# Slide generation adapters (6 languages)
+[[adapters]]
+task = "slides"
+language = "en"
+version = "1.0.0"
+size = "5MB"
+base_model = "mt5-small"
+
+[[adapters]]
+task = "slides"
+language = "vi"
+version = "1.0.0"
+size = "5MB"
+base_model = "mt5-small"
+
+[[adapters]]
+task = "slides"
+language = "th"
+version = "1.0.0"
+size = "5MB"
+base_model = "mt5-small"
+
+[[adapters]]
+task = "slides"
+language = "ar"
+version = "1.0.0"
+size = "5MB"
+base_model = "mt5-small"
+
+[[adapters]]
+task = "slides"
+language = "zh"
+version = "1.0.0"
+size = "5MB"
+base_model = "mt5-small"
+
+[[adapters]]
+task = "slides"
+language = "es"
+version = "1.0.0"
+size = "5MB"
+base_model = "mt5-small"

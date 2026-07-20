@@ -1,0 +1,25 @@
+[package]
+name = "zk-ai-uniffi"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+description = "UniFFI bindings for zk-ai (iOS Swift + Android Kotlin)"
+
+[lib]
+name = "zk_ai_uniffi"
+crate-type = ["lib", "staticlib", "cdylib"]
+
+[dependencies]
+zk-ai-core = { path = "../core" }
+uniffi = { version = "0.29", features = ["cli"] }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tokio = { workspace = true }
+async-trait = { workspace = true }
+
+[[bin]]
+name = "uniffi-bindgen"
+path = "src/bin/uniffi-bindgen.rs"
