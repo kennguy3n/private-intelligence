@@ -7,9 +7,11 @@ members = [
     "crates/uniffi",
     "crates/napi",
     "crates/go-ffi",
+    "crates/kinshield",
     "samples/kchat-b2c",
     "samples/kchat-b2b",
     "samples/kinshield",
+    "samples/kinshield-scam-demo",
     "samples/kinsense",
 ]
 

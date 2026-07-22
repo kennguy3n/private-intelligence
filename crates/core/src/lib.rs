@@ -55,6 +55,7 @@ pub use governor::{ResourceGovernor, GovernorConfig};
 pub use marketplace::{Marketplace, LoRAPack, LoRAPackManifest, LoRAPackAdapter};
 pub use pipeline::{Task, TaskResult, TaskOptions};
 pub use pipeline::image_index::{ImageIndex, ImageEntry, ImageSearchHit, cosine_similarity};
+pub use pipeline::{keyword_match, count_keyword_matches};
 pub use pipeline::text_index::{TextIndex, TextEntry, TextSearchHit};
 pub use pipeline::privacy::audit_log::{AuditLog, AuditEntry};
 pub use pipeline::privacy::policy::{PolicyEngine, PolicyDecision};

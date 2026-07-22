@@ -1223,6 +1223,7 @@ dependencies = [
 name = "kinsense"
 version = "0.1.0"
 dependencies = [
+ "chrono",
  "serde",
  "serde_json",
  "tokio",
@@ -1236,6 +1237,33 @@ name = "kinshield"
 version = "0.1.0"
 dependencies = [
  "chrono",
+ "regex-lite",
+ "serde",
+ "serde_json",
+ "tracing",
+ "uuid",
+ "zk-ai-core",
+]
+
+[[package]]
+name = "kinshield-privacy-demo"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+ "zk-ai-core",
+]
+
+[[package]]
+name = "kinshield-scam-demo"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "kinshield",
  "serde",
  "serde_json",
  "tokio",

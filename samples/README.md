@@ -11,8 +11,8 @@ All inference runs **on-device**. No network calls, no API keys, no per-token co
 |--------|---------|-------------|
 | **KChat B2C** | `kchat-b2c` | Consumer chat app — email summaries, smart replies, meeting summaries, notification digests, daily digests, pre-send checks |
 | **KChat B2B** | `kchat-b2b` | Enterprise chat app — contract analysis, document comparison, ticket intelligence, compliance, meeting minutes, collaboration summaries |
-| **KinShield** | `kinshield` | Privacy & compliance — PII detection/redaction, sensitivity classification, policy engine, tamper-evident audit logs, ZK attestations, data residency certificates |
-| **KinSense** | `kinsense` | Semantic perception — embedding-based search, image search, document clustering, auto-tagging, find-similar, reranking |
+| **KinShield** | `kinshield-scam-demo` | Scam detection — multi-channel (SMS, email, messaging, browser, call) scam detection with 25-indicator ontology, 15 SEA scam types, family construct with guardian alerts, privacy-bounded decision traces, on-device calibration, structured feedback, audit logs, PII detection, policy engine |
+| **KinSense** | `kinsense` | Family safety — activity classification, anomaly detection, SOS urgency, smart replies, daily safety digest, PII redaction, policy engine, location recognition, audit trail, ZK attestation |
 
 ## Quick Start
 
@@ -22,11 +22,11 @@ All inference runs **on-device**. No network calls, no API keys, no per-token co
 # Run any sample individually
 cargo run -p kchat-b2c
 cargo run -p kchat-b2b
-cargo run -p kinshield
+cargo run -p kinshield-scam-demo
 cargo run -p kinsense
 
 # Build all samples
-cargo build -p kchat-b2c -p kchat-b2b -p kinshield -p kinsense
+cargo build -p kchat-b2c -p kchat-b2b -p kinshield-scam-demo -p kinsense
 ```
 
 ## Architecture
@@ -43,11 +43,11 @@ samples/
 │   ├── Cargo.toml
 │   ├── README.md
 │   └── src/main.rs
-├── kinshield/          # Privacy & compliance demo
+├── kinshield-scam-demo/  # Scam detection demo
 │   ├── Cargo.toml
 │   ├── README.md
 │   └── src/main.rs
-├── kinsense/           # Semantic perception demo
+├── kinsense/           # Family safety demo
 │   ├── Cargo.toml
 │   ├── README.md
 │   └── src/main.rs
@@ -75,12 +75,15 @@ Each sample:
 `collab_summary`, `auto_abstract`
 
 ### KinShield
-`detect_pii`, `redact`, `redact_with_report`, `pii_scan`,
-`classify_sensitivity`, `compliance_report`,
-`AuditLog`, `ZkAttestation`, `NetworkMonitor`, `ResidencyCertificate`,
-`PolicyEngine`, `verify_file`
+`detect_pii`, `redact`, `AuditLog`, `PolicyEngine`, `PolicyDecision`,
+`detect_pii`, `run_embedding`, `keyword_match`, `count_keyword_matches`,
+`ZkAttestation`, `NetworkMonitor`, `ResidencyCertificate`, `verify_file`
 
 ### KinSense
+`auto_tag`, `find_similar`, `cluster`, `rerank`, `classify_urgency`,
+`smart_reply`, `notif_summary`, `pii_scan`, `classify_sensitivity`,
 `semantic_search`, `image_search`, `run_embedding`,
 `TextIndex`, `ImageIndex`, `cosine_similarity`,
-`auto_tag`, `find_similar`, `cluster`, `rerank`
+`detect_pii`, `redact_with_report`,
+`PolicyEngine`, `PolicyDecision`, `AuditLog`, `ZkAttestation`,
+`NetworkMonitor`, `ResidencyCertificate`, `verify_file`

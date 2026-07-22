@@ -1,0 +1,21 @@
+[package]
+name = "kinshield"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "On-device scam risk detection and prevention with family-construct protection"
+
+[lib]
+name = "kinshield"
+path = "src/lib.rs"
+
+[dependencies]
+zk-ai-core = { path = "../core" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+chrono = { workspace = true }
+uuid = { workspace = true }
+tracing = { workspace = true }
+regex-lite = { workspace = true }

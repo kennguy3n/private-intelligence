@@ -24,6 +24,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 
+	"github.com/kennguy3n/zk-ai/internal/aggregation"
 	"github.com/kennguy3n/zk-ai/internal/api"
 	"github.com/kennguy3n/zk-ai/internal/inference"
 	"github.com/kennguy3n/zk-ai/internal/privacy"
@@ -68,6 +69,10 @@ func main() {
 	handler := api.NewHandler(engine, guard, logger)
 	r.Post("/api/ai/infer", handler.Infer)
 	r.Get("/api/ai/profile", handler.DeviceProfile)
+
+	// Mock aggregation endpoint (cohort suppression + DP noise simulation)
+	aggregator := aggregation.NewAggregator()
+	r.Post("/api/aggregate", aggregator.HandleAggregate)
 
 	srv := &http.Server{
 		Addr:         *addr,
