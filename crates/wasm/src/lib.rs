@@ -9,8 +9,7 @@ use wasm_bindgen::prelude::*;
 use zk_ai_core::{
     AiEngine, DeviceProfiler, DeviceProfile,
     TaskOptions as CoreTaskOptions,
-    DeviceCapability, DeviceTier, Task,
-    capability_from_profile,
+    DeviceCapability, DeviceTier,
 };
 
 /// JS-facing device profile.
@@ -67,7 +66,7 @@ impl JsAiEngine {
     /// Create a new engine with the given cache directory.
     /// Returns a Promise that resolves to a `JsAiEngine`.
     #[wasm_bindgen(constructor)]
-    pub fn new(cache_dir: String) -> JsAiEngine {
+    pub fn new(_cache_dir: String) -> JsAiEngine {
         JsAiEngine {
             engine: Rc::new(RefCell::new(None)),
         }

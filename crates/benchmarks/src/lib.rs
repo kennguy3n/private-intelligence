@@ -1,6 +1,5 @@
 //! Shared benchmark utilities for zk-ai benchmarks.
 
-use std::path::PathBuf;
 use tempfile::TempDir;
 use zk_ai_core::pipeline::SUPPORTED_LANGUAGES;
 use zk_ai_core::governor::GovernorConfig;
@@ -16,6 +15,7 @@ pub async fn setup_fallback_engine() -> (TempDir, AiEngine) {
         "mt5-small-1.0.0-int8.onnx",
         "multilingual-e5-small-1.0.0-int8.onnx",
         "clip-vit-base-patch32-1.0.0-int8.onnx",
+        "whisper-tiny-1.0.0-int8.onnx",
     ] {
         std::fs::write(models_dir.join(filename), b"fake_model").unwrap();
     }

@@ -7,7 +7,6 @@ uniffi::setup_scaffolding!();
 use zk_ai_core::{
     AiEngine, DeviceProfile, DeviceTier, Acceleration, ThermalState,
     TaskOptions as CoreTaskOptions, TaskResult as CoreTaskResult,
-    ModelSpec, ModelManager,
     DeviceCapability,
 };
 

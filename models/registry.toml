@@ -293,3 +293,225 @@ language = "es"
 version = "1.0.0"
 size = "5MB"
 base_model = "mt5-small"
+
+# ── New base model: Whisper-tiny for speech-to-text (MidRange+ only) ──
+
+[[models]]
+name = "whisper-tiny"
+version = "1.0.0"
+quantization = "int8"
+size = "30MB"
+min_tier = "mid_range"
+on_demand = true
+
+# ── New LoRA adapters (23 total) ──
+# B2C Category 1: Email & Messaging Intelligence
+
+[[adapters]]
+task = "email_summary"
+language = "en"
+version = "1.0.0"
+size = "4MB"
+base_model = "mt5-small"
+
+[[adapters]]
+task = "draftreply"
+language = "en"
+version = "1.0.0"
+size = "4MB"
+base_model = "mt5-small"
+
+[[adapters]]
+task = "smartreply"
+language = "en"
+version = "1.0.0"
+size = "3MB"
+base_model = "mt5-small"
+
+[[adapters]]
+task = "chatsum"
+language = "en"
+version = "1.0.0"
+size = "4MB"
+base_model = "mt5-small"
+
+[[adapters]]
+task = "notifsum"
+language = "en"
+version = "1.0.0"
+size = "3MB"
+base_model = "mt5-small"
+
+# B2C Category 2: Meeting & Voice Intelligence
+
+[[adapters]]
+task = "meeting"
+language = "en"
+version = "1.0.0"
+size = "4MB"
+base_model = "mt5-small"
+
+[[adapters]]
+task = "actions"
+language = "en"
+version = "1.0.0"
+size = "3MB"
+base_model = "mt5-small"
+
+# B2C Category 3: Document Productivity
+
+[[adapters]]
+task = "grammar"
+language = "en"
+version = "1.0.0"
+size = "4MB"
+base_model = "mt5-small"
+
+[[adapters]]
+task = "simplify"
+language = "en"
+version = "1.0.0"
+size = "3MB"
+base_model = "mt5-small"
+
+# B2C Category 4: Personal Knowledge & Search
+
+[[adapters]]
+task = "rag_qa"
+language = "en"
+version = "1.0.0"
+size = "5MB"
+base_model = "mt5-small"
+
+[[adapters]]
+task = "chat"
+language = "en"
+version = "1.0.0"
+size = "4MB"
+base_model = "mt5-small"
+
+# B2C Category 5: Communication Assistance
+
+[[adapters]]
+task = "rewrite"
+language = "en"
+version = "1.0.0"
+size = "4MB"
+base_model = "mt5-small"
+
+[[adapters]]
+task = "expand"
+language = "en"
+version = "1.0.0"
+size = "3MB"
+base_model = "mt5-small"
+
+[[adapters]]
+task = "explain"
+language = "en"
+version = "1.0.0"
+size = "3MB"
+base_model = "mt5-small"
+
+# B2B Category 1: Document Intelligence
+
+[[adapters]]
+task = "contract"
+language = "en"
+version = "1.0.0"
+size = "5MB"
+base_model = "mt5-small"
+
+# B2B Category 3: Email & Support Intelligence
+
+[[adapters]]
+task = "ticket_summary"
+language = "en"
+version = "1.0.0"
+size = "4MB"
+base_model = "mt5-small"
+
+[[adapters]]
+task = "ticket_reply"
+language = "en"
+version = "1.0.0"
+size = "4MB"
+base_model = "mt5-small"
+
+# B2B Category 4: Compliance & Privacy
+
+[[adapters]]
+task = "compliance"
+language = "en"
+version = "1.0.0"
+size = "4MB"
+base_model = "mt5-small"
+
+# B2B Category 5: Knowledge Management
+
+[[adapters]]
+task = "onboarding"
+language = "en"
+version = "1.0.0"
+size = "4MB"
+base_model = "mt5-small"
+
+[[adapters]]
+task = "policy"
+language = "en"
+version = "1.0.0"
+size = "4MB"
+base_model = "mt5-small"
+
+[[adapters]]
+task = "abstract"
+language = "en"
+version = "1.0.0"
+size = "3MB"
+base_model = "mt5-small"
+
+# B2B Category 6: Team Productivity
+
+[[adapters]]
+task = "collab_summary"
+language = "en"
+version = "1.0.0"
+size = "4MB"
+base_model = "mt5-small"
+
+[[adapters]]
+task = "decisions"
+language = "en"
+version = "1.0.0"
+size = "3MB"
+base_model = "mt5-small"
+
+# Multi-language variants for key adapters (Vietnamese examples)
+
+[[adapters]]
+task = "email_summary"
+language = "vi"
+version = "1.0.0"
+size = "4MB"
+base_model = "mt5-small"
+
+[[adapters]]
+task = "meeting"
+language = "vi"
+version = "1.0.0"
+size = "4MB"
+base_model = "mt5-small"
+
+[[adapters]]
+task = "rag_qa"
+language = "vi"
+version = "1.0.0"
+size = "5MB"
+base_model = "mt5-small"
+
+[[adapters]]
+task = "contract"
+language = "vi"
+version = "1.0.0"
+size = "5MB"
+base_model = "mt5-small"

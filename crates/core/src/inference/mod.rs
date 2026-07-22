@@ -648,10 +648,20 @@ impl InferenceSession {
             )));
         }
 
-        tracing::info!(adapter = %adapter.id(), "attaching LoRA adapter");
-
         // Load the LoRA weights from the safetensors file
         adapter.load_weights()?;
+
+        if let Some(weights) = adapter.weights() {
+            let actual_rank = rank_from_weights(weights);
+            tracing::info!(
+                adapter = %adapter.id(),
+                declared_rank = adapter.rank,
+                actual_rank,
+                "attaching LoRA adapter"
+            );
+        } else {
+            tracing::info!(adapter = %adapter.id(), "attaching LoRA adapter (no weights loaded)");
+        }
 
         self.current_adapter = Some(adapter);
         Ok(())
@@ -929,7 +939,7 @@ impl InferenceSession {
             use ort::execution_providers::ExecutionProviderDispatch;
 
             let providers: Vec<ExecutionProviderDispatch> = {
-                let mut eps = Vec::new();
+                let eps = Vec::new();
 
                 #[cfg(feature = "cuda")]
                 if self.config.use_gpu {
@@ -1524,32 +1534,43 @@ fn generate_tokens_stream(
 /// - **Generate doc/slides**: extract and format the outline/topic
 /// - **Default**: return first 3 sentences
 fn smart_fallback(prompt: &str) -> String {
-    // Extract content from the prompt. Prompts come in two formats:
-    //   build_prompt:  "{task}: {content}\n{lang_instruction}"
-    //   translate:     "Translate the following text from {src} to {tgt}:\n{text}"
-    // We need to find the content between the task instruction and the
-    // trailing language instruction (if any).
     let content = extract_prompt_content(prompt);
 
-    // Determine task type from the prompt prefix (before the first colon)
     let task_prefix = prompt.split(':').next().unwrap_or("").to_lowercase();
 
+    // Summarization tasks — return first 2-3 sentences
     if task_prefix.starts_with("summarize") {
         let sentences = split_sentences(content);
-        let summary = sentences.iter().take(2).map(|s| format!("{}.", s)).collect::<Vec<_>>().join(" ");
-        return summary;
+        return sentences.iter().take(3).map(|s| format!("{}.", s)).collect::<Vec<_>>().join(" ");
     }
 
+    // Key points / action items / decisions — return bullet list from first sentences
     if task_prefix.contains("key points") || task_prefix.contains("key_points") || task_prefix.contains("extract key") {
         let sentences = split_sentences(content);
         let points: Vec<String> = sentences.iter().take(5).map(|s| format!("• {}", s)).collect();
         return points.join("\n");
     }
 
+    if task_prefix.starts_with("extract all action items") || task_prefix.starts_with("extract all decisions") {
+        let sentences = split_sentences(content);
+        let points: Vec<String> = sentences.iter().filter(|s| {
+            s.to_lowercase().contains("will") || s.to_lowercase().contains("should")
+                || s.to_lowercase().contains("need") || s.to_lowercase().contains("assign")
+                || s.to_lowercase().contains("approve") || s.to_lowercase().contains("decid")
+                || s.to_lowercase().contains("prioriti") || s.to_lowercase().contains("action")
+        }).take(5).map(|s| format!("• {}", s)).collect();
+        if points.is_empty() {
+            return sentences.iter().take(3).map(|s| format!("• {}", s)).collect::<Vec<_>>().join("\n");
+        }
+        return points.join("\n");
+    }
+
+    // Translate — echo content (same-language fallback)
     if task_prefix.starts_with("translate") {
         return content.to_string();
     }
 
+    // Generate document
     if task_prefix.starts_with("generate") && task_prefix.contains("document") {
         let lines: Vec<&str> = content.lines().collect();
         let mut doc = String::new();
@@ -1570,12 +1591,109 @@ fn smart_fallback(prompt: &str) -> String {
         return doc.trim().to_string();
     }
 
+    // Generate slides
     if task_prefix.starts_with("generate") && (task_prefix.contains("slide") || task_prefix.contains("presentation")) {
         let sentences = split_sentences(content);
         let slides: Vec<String> = sentences.iter().take(6).enumerate().map(|(i, s)| {
             format!("Slide {}: {}", i + 1, s)
         }).collect();
         return slides.join("\n");
+    }
+
+    // Draft reply — echo the intent and original email as a placeholder reply
+    if task_prefix.starts_with("draft a reply") || task_prefix.starts_with("draft a helpful response") {
+        let sentences = split_sentences(content);
+        return sentences.iter().take(3).map(|s| format!("{}.", s)).collect::<Vec<_>>().join(" ");
+    }
+
+    // Rewrite tone — echo content (can't rewrite without a model)
+    if task_prefix.starts_with("rewrite") {
+        let lines: Vec<&str> = content.lines().collect();
+        // Skip the "Target tone:" and "Text to rewrite:" prefix lines
+        let text_lines: Vec<&str> = lines.iter()
+            .filter(|&&l| !l.starts_with("Target tone:") && !l.starts_with("Text to rewrite:"))
+            .copied()
+            .collect();
+        return text_lines.iter().map(|l| l.trim()).filter(|l| !l.is_empty()).collect::<Vec<_>>().join(" ");
+    }
+
+    // Explain — extract the term and context, return a brief echo
+    if task_prefix.starts_with("explain") {
+        let sentences = split_sentences(content);
+        return sentences.iter().take(3).map(|s| format!("{}.", s)).collect::<Vec<_>>().join(" ");
+    }
+
+    // Expand — echo the bullets as prose
+    if task_prefix.starts_with("expand") {
+        let sentences = split_sentences(content);
+        return sentences.iter().take(5).map(|s| format!("{}.", s)).collect::<Vec<_>>().join(" ");
+    }
+
+    // Simplify — return first 3 sentences (simplified = shorter)
+    if task_prefix.starts_with("simplify") {
+        let sentences = split_sentences(content);
+        return sentences.iter().take(3).map(|s| format!("{}.", s)).collect::<Vec<_>>().join(" ");
+    }
+
+    // Grammar check — echo content (can't correct without a model)
+    if task_prefix.starts_with("correct the grammar") {
+        return content.to_string();
+    }
+
+    // Pre-send check — echo content
+    if task_prefix.starts_with("pre-send") || task_prefix.contains("pre_send") {
+        return content.to_string();
+    }
+
+    // Contract analysis — return key sentences mentioning parties, obligations, etc.
+    if task_prefix.starts_with("analyze") && task_prefix.contains("contract") {
+        let sentences = split_sentences(content);
+        let key: Vec<String> = sentences.iter().filter(|s| {
+            let lower = s.to_lowercase();
+            lower.contains("party") || lower.contains("parties") || lower.contains("obligation")
+                || lower.contains("liability") || lower.contains("termination") || lower.contains("payment")
+                || lower.contains("confidential") || lower.contains("deadline") || lower.contains("risk")
+        }).take(5).map(|s| format!("• {}", s)).collect();
+        if key.is_empty() {
+            return sentences.iter().take(5).map(|s| format!("• {}", s)).collect::<Vec<_>>().join("\n");
+        }
+        return key.join("\n");
+    }
+
+    // QA / answer tasks — return first 2 sentences as a brief answer
+    if task_prefix.starts_with("answer") {
+        let sentences = split_sentences(content);
+        return sentences.iter().take(2).map(|s| format!("{}.", s)).collect::<Vec<_>>().join(" ");
+    }
+
+    // Format / dictate — return first 3 sentences
+    if task_prefix.starts_with("format") {
+        let sentences = split_sentences(content);
+        return sentences.iter().take(3).map(|s| format!("{}.", s)).collect::<Vec<_>>().join(" ");
+    }
+
+    // Meeting minutes / collab summary — return first 3 sentences
+    if task_prefix.starts_with("generate formal meeting") || task_prefix.starts_with("synthesize") {
+        let sentences = split_sentences(content);
+        return sentences.iter().take(3).map(|s| format!("{}.", s)).collect::<Vec<_>>().join(" ");
+    }
+
+    // Follow up — return first 2 sentences
+    if task_prefix.starts_with("send a polite") || task_prefix.contains("follow") {
+        let sentences = split_sentences(content);
+        return sentences.iter().take(2).map(|s| format!("{}.", s)).collect::<Vec<_>>().join(" ");
+    }
+
+    // Abstract — return first 2 sentences
+    if task_prefix.starts_with("write a 2-sentence") || task_prefix.contains("abstract") {
+        let sentences = split_sentences(content);
+        return sentences.iter().take(2).map(|s| format!("{}.", s)).collect::<Vec<_>>().join(" ");
+    }
+
+    // Compare docs — return first 2 sentences
+    if task_prefix.starts_with("summarize the key differences") {
+        let sentences = split_sentences(content);
+        return sentences.iter().take(3).map(|s| format!("{}.", s)).collect::<Vec<_>>().join(" ");
     }
 
     // Default: return first 3 sentences of content
@@ -1610,9 +1728,37 @@ fn extract_prompt_content(prompt: &str) -> &str {
     // Each prefix ends with ": " which is the build_prompt separator.
     let prefixes: &[&str] = &[
         "Summarize the following text concisely: ",
+        "Summarize the following email thread as 3 key bullet points: ",
+        "Summarize the following meeting transcript, including key decisions and discussion points: ",
+        "Summarize the following group chat as 3-5 key bullet points: ",
+        "Summarize the following notifications into a 2-3 sentence digest: ",
+        "Summarize the following support ticket: issue description, troubleshooting steps tried, and current status: ",
+        "Summarize the key differences between the two documents based on the following analysis: ",
         "Extract the key points from the following text as a bullet list: ",
+        "Extract all action items from the following meeting transcript as a checklist (assignee, task, deadline): ",
+        "Extract all decisions made in the following meeting as a structured list (date, decision, rationale, attendees): ",
         "Generate a document based on the following topic and outline: ",
         "Generate slide content with the following format for each slide:\n        SLIDE N\n        Title: <slide title>\n        • <bullet point 1>\n        • <bullet point 2>\n        • <bullet point 3>\n        IMAGE_QUERY: <search terms for a relevant image>: ",
+        "Draft a reply to the following email based on the given intent: ",
+        "Draft a helpful response to the following support ticket based on the issue and troubleshooting history: ",
+        "Rewrite the following text in the specified tone, preserving the meaning: ",
+        "Explain the term in plain language (2-3 sentences) based on the context: ",
+        "Expand the following bullet points into full flowing prose: ",
+        "Simplify the following text to be easy to understand for a general audience: ",
+        "Correct the grammar and spelling in the following text, preserving the original meaning: ",
+        "Analyze the following contract and extract: parties, obligations, deadlines, risks, and termination clauses: ",
+        "Answer the question based on the following context. Cite sources.: ",
+        "Answer the question based on the following meeting context: ",
+        "Answer the user's message based on the document context and conversation history: ",
+        "Answer the policy question by citing the relevant policy sections: ",
+        "Answer the new hire's question with step-by-step instructions based on the onboarding context: ",
+        "Format the following transcribed notes into a well-structured document: ",
+        "Format the following meeting information into formal meeting minutes with sections: Attendees, Agenda, Discussion Summary, Decisions, Action Items: ",
+        "Synthesize a unified summary from the following team annotations: ",
+        "Send a polite follow-up reminder for the following overdue action items: ",
+        "Write a 2-sentence abstract summarizing the following document: ",
+        "Generate 3 short reply options (under 10 words each) for the following messages: ",
+        "Generate follow-up reminders for the following action items: ",
     ];
     for prefix in prefixes {
         if without_lang.starts_with(prefix) {

@@ -23,7 +23,7 @@ use std::time::Duration;
 use async_trait::async_trait;
 use crate::profiler::{DeviceProfile, DeviceTier};
 use crate::pipeline::{Task, TaskOptions, TaskResult};
-use crate::{Result, ZkAiError};
+use crate::Result;
 
 /// A device's advertised capabilities in the swarm.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -179,6 +179,12 @@ impl<T: SwarmTransport> SwarmCoordinator<T> {
     ) -> Result<Option<String>> {
         let required_model = match &task {
             Task::ImageSearch => "clip-vit-base-patch32",
+            Task::Transcribe | Task::LiveTranscribe | Task::VoiceAction | Task::DictateFormat => "whisper-tiny",
+            Task::SemanticSearch | Task::ClassifyTone | Task::Prioritize | Task::AutoTag
+            | Task::FindSimilar | Task::Cluster | Task::FindClause | Task::ExtractDates
+            | Task::ClassifyUrgency | Task::EmailCategorize | Task::Sentiment
+            | Task::PiiScan | Task::ClassifySensitivity | Task::Dedup | Task::FindExpert
+            | Task::Rerank => "multilingual-e5-small",
             _ => "mt5-small",
         };
 
@@ -267,6 +273,7 @@ pub fn capability_from_profile(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::ZkAiError;
 
     fn mock_device(id: &str, tier: DeviceTier, idle: bool, models: Vec<&str>) -> DeviceCapability {
         DeviceCapability {

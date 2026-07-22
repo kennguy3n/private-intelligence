@@ -65,6 +65,11 @@ impl TextIndex {
         self.entries.is_empty()
     }
 
+    /// Get all entries in the index (for clustering, iteration, etc.).
+    pub fn entries(&self) -> &[TextEntry] {
+        &self.entries
+    }
+
     /// Search the index for the top-k most semantically similar passages.
     ///
     /// `query_embedding` should be L2-normalized for correct cosine similarity.

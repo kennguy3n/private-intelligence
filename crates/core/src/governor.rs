@@ -49,11 +49,13 @@ fn sample_unix() -> Option<ResourceSnapshot> {
     let cpu_time = get_process_cpu_time_unix()?;
     let mem_percent = get_process_memory_percent_unix()?;
 
-    // Compute CPU percentage from process uptime (single measurement, no blocking sleep)
-    // cpu_time is in seconds; process uptime is from /proc/self/stat starttime
+    // Compute CPU percentage from process uptime, normalized by core count.
+    // cpu_time is total seconds across all cores; divide by num_cpus to get
+    // the percentage of total CPU capacity being used.
     let uptime_secs = get_process_uptime_unix()?;
-    let cpu_percent = if uptime_secs > 0.0 {
-        (cpu_time / uptime_secs * 100.0).min(100.0)
+    let num_cpus = num_cpus_unix() as f64;
+    let cpu_percent = if uptime_secs > 0.0 && num_cpus > 0.0 {
+        (cpu_time / uptime_secs / num_cpus * 100.0).min(100.0)
     } else {
         0.0
     };

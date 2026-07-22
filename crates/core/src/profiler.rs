@@ -19,7 +19,7 @@
 //! - **Android**: ActivityManager, BatteryManager, NNAPI enumeration.
 
 use serde::{Deserialize, Serialize};
-use crate::{Result, ZkAiError};
+use crate::Result;
 
 /// Device capability tier. Governs model size, decoding strategy,
 /// and resource limits.
@@ -323,8 +323,6 @@ fn detect_wasm() -> Result<DeviceProfile> {
 
 #[cfg(all(target_os = "macos", not(target_arch = "wasm32")))]
 fn detect_macos() -> Result<DeviceProfile> {
-    use std::process::Command;
-
     let total_memory_mb = get_sysctl_u64("hw.memsize")
         .map(|b| (b / (1024 * 1024)) as u32)
         .unwrap_or(8192);

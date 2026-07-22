@@ -148,6 +148,39 @@ impl ModelSpec {
         }
     }
 
+    /// Whisper-tiny int8 model for speech-to-text.
+    /// On-demand only, MidRange+ tier. ~30MB.
+    pub fn whisper_tiny_int8() -> Self {
+        Self {
+            name: "whisper-tiny".to_string(),
+            version: "1.0.0".to_string(),
+            quantization: Quantization::Int8,
+            sha256: None,
+        }
+    }
+
+    /// mT5-small int4 model for throttled/low-end fallback.
+    /// ~25MB, reduced quality but lower memory.
+    pub fn mt5_small_int4() -> Self {
+        Self {
+            name: "mt5-small".to_string(),
+            version: "1.0.0".to_string(),
+            quantization: Quantization::Int4,
+            sha256: None,
+        }
+    }
+
+    /// e5-small int4 model for throttled/low-end fallback.
+    /// ~25MB, reduced quality but lower memory.
+    pub fn e5_small_int4() -> Self {
+        Self {
+            name: "multilingual-e5-small".to_string(),
+            version: "1.0.0".to_string(),
+            quantization: Quantization::Int4,
+            sha256: None,
+        }
+    }
+
     /// File name for this model in the cache.
     pub fn filename(&self) -> String {
         format!("{}-{}-{}.onnx", self.name, self.version, self.quantization)
@@ -216,6 +249,20 @@ impl ModelSpec {
                 return Err(ZkAiError::ModelIntegrity {
                     expected: expected_hash.clone(),
                     actual: actual_hash,
+                });
+            }
+        }
+        Ok(())
+    }
+
+    /// Verify a pre-computed SHA-256 hex hash against the expected hash.
+    /// Avoids re-reading the file when the hash was computed during streaming.
+    pub fn verify_hash(&self, actual_hash: &str) -> Result<()> {
+        if let Some(expected_hash) = &self.sha256 {
+            if actual_hash != expected_hash {
+                return Err(ZkAiError::ModelIntegrity {
+                    expected: expected_hash.clone(),
+                    actual: actual_hash.to_string(),
                 });
             }
         }
@@ -379,19 +426,21 @@ impl ModelManager {
                 cb.on_progress(DownloadProgress { downloaded: 0, total });
             }
 
-            // Stream the response body directly to disk, reporting progress
+            // Stream the response body directly to disk, hashing as we go
             use futures::StreamExt;
             let mut file = std::fs::File::create(&dest)
                 .map_err(|e| ZkAiError::ModelDownload(format!("create file: {e}")))?;
             let mut body = resp.bytes_stream();
             let mut downloaded: u64 = 0;
             let mut last_report: u64 = 0;
+            let mut hasher = Sha256::new();
             const REPORT_INTERVAL: u64 = 64 * 1024; // report every 64KB
 
             while let Some(chunk_result) = body.next().await {
                 let chunk = chunk_result
                     .map_err(|e| ZkAiError::ModelDownload(e.to_string()))?;
                 downloaded += chunk.len() as u64;
+                hasher.update(&chunk);
                 std::io::Write::write_all(&mut file, &chunk)
                     .map_err(|e| ZkAiError::ModelDownload(format!("write chunk: {e}")))?;
 
@@ -412,12 +461,10 @@ impl ModelManager {
                 .map_err(|e| ZkAiError::ModelDownload(format!("flush file: {e}")))?;
             drop(file);
 
-            // Integrity check (read back from disk to verify)
-            let bytes = std::fs::read(&dest)
-                .map_err(|e| ZkAiError::ModelDownload(format!("read back for verify: {e}")))?;
-            spec.verify_integrity(&bytes)?;
-
-            let size_bytes = bytes.len() as u64;
+            // Integrity check using hash computed during download (no re-read needed)
+            let hash = hex::encode(hasher.finalize());
+            spec.verify_hash(&hash)?;
+            let size_bytes = downloaded;
 
             tracing::info!(
                 model = %spec.name,

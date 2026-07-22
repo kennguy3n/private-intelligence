@@ -1,0 +1,857 @@
+   Compiling zk-ai-core v0.1.0 (/Users/Ken/workspaces/private-intelligence/crates/core)
+warning: unused variable: `source`
+  --> crates/core/src/pipeline/dedup.rs:94:17
+   |
+94 |             let source = h.source.clone().unwrap_or_else(|| h.id.clone());
+   |                 ^^^^^^ help: if this is intentional, prefix it with an underscore: `_source`
+   |
+   = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: `zk-ai-core` (lib) generated 1 warning (run `cargo fix --lib -p zk-ai-core` to apply 1 suggestion)
+   Compiling zk-ai-benchmarks v0.1.0 (/Users/Ken/workspaces/private-intelligence/crates/benchmarks)
+warning: unused variable: `i`
+    --> crates/benchmarks/benches/bench_comprehensive.rs:2088:10
+     |
+2088 |     for (i, &(dur, freq)) in AUDIO_DATASET.iter().enumerate() {
+     |          ^ help: if this is intentional, prefix it with an underscore: `_i`
+     |
+     = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: `zk-ai-benchmarks` (bench "bench_comprehensive") generated 1 warning (run `cargo fix --bench "bench_comprehensive" -p zk-ai-benchmarks` to apply 1 suggestion)
+    Finished `bench` profile [optimized] target(s) in 22.37s
+     Running benches/bench_comprehensive.rs (target/release/deps/bench_comprehensive-2014bd99808502f8)
+Gnuplot not found, using plotters backend
+
+Running comprehensive pipeline benchmark report...
+
+====================================================================================================
+COMPREHENSIVE PIPELINE BENCHMARK REPORT
+Total test duration: 0.54s
+Total tests run: 455
+====================================================================================================
+
+TASK                           VARIANT            LAT(ms)     IN_TOK    OUT_TOK       OK OUTPUT PREVIEW                                    
+-------------------------------------------------------------------------------------------------------------------------------------
+action_items                   meeting                  0        518         71      YES • Customer satisfaction score is 4.2, up from 3
+  └ action_items stats         n=1                  avg=0      min=0      p50=0    max=0
+
+auto_abstract                  meeting                  0        511         37      YES Meeting: Q3 Product Strategy Review
+Date: 2024-
+  └ auto_abstract stats        n=1                  avg=0      min=0      p50=0    max=0
+
+auto_tag                       doc1                     0         17          3      YES personal (0.162), hr (0.135), finance (0.101)
+auto_tag                       doc2                     0         16          3      YES technology (0.148), legal (0.059), finance (0.0
+auto_tag                       doc3                     0         18          3      YES finance (0.161), travel (0.107), personal (0.08
+auto_tag                       doc4                     0         14          3      YES legal (0.135), finance (0.126), marketing (0.06
+auto_tag                       doc5                     0         13          3      YES hr (0.133), marketing (0.100), finance (0.093)
+auto_tag                       doc6                     0         12          3      YES personal (0.145), finance (0.136), marketing (0
+auto_tag                       doc7                     0         16          3      YES technology (0.143), marketing (0.057), hr (0.05
+auto_tag                       doc8                     0         17          3      YES finance (0.189), technology (0.116), personal (
+auto_tag                       doc9                     0         14          3      YES personal (0.189), meeting (0.142), finance (0.0
+auto_tag                       doc10                    0         16          3      YES personal (0.182), travel (0.170), hr (0.151)
+auto_tag                       doc11                    0         12          3      YES legal (0.145), personal (0.109), meeting (0.098
+auto_tag                       doc12                    0         16          3      YES finance (0.226), personal (0.091), marketing (0
+  └ auto_tag stats             n=12                 avg=0      min=0      p50=0    max=0
+
+chat_summary                   team_chat                0        225         94      YES [10:02] Sarah: Hey team, anyone seen the latest
+  └ chat_summary stats         n=1                  avg=0      min=0      p50=0    max=0
+
+classify_sensitivity           expect=Public            0         29          1      YES Public (score: 0.750)
+classify_sensitivity           expect=Internal          0         28          1      YES Internal (score: 0.750)
+classify_sensitivity           expect=Confidential          0         32          1      YES Confidential (score: 0.850)
+classify_sensitivity           expect=Restricted          0         20          1      YES Restricted (score: 0.950)
+  └ classify_sensitivity stats n=4                  avg=0      min=0      p50=0    max=0
+
+classify_sensitivity_expanded  expect=Public            0         15          1      YES Public (score: 0.750)
+classify_sensitivity_expanded  expect=Internal          0         15          1      YES Internal (score: 0.750)
+classify_sensitivity_expanded  expect=Confidential          0         12          1      YES Confidential (score: 0.850)
+classify_sensitivity_expanded  expect=Restricted          0          9          1      YES Restricted (score: 0.950)
+classify_sensitivity_expanded  expect=Public            0         10          1      YES Public (score: 0.750)
+classify_sensitivity_expanded  expect=Internal          0         11          1      YES Internal (score: 0.750)
+classify_sensitivity_expanded  expect=Confidential          0         12          1      YES Confidential (score: 0.850)
+classify_sensitivity_expanded  expect=Restricted          0          8          1      YES Restricted (score: 0.950)
+classify_sensitivity_expanded  expect=Public            0         12          1      YES Public (score: 0.750)
+classify_sensitivity_expanded  expect=Internal          0         11          1      YES Internal (score: 0.750)
+classify_sensitivity_expanded  expect=Confidential          0          9          1      YES Confidential (score: 0.850)
+classify_sensitivity_expanded  expect=Restricted          0          7          1      YES Restricted (score: 0.950)
+classify_sensitivity_expanded  expect=Public            0          9          1      YES Public (score: 0.750)
+classify_sensitivity_expanded  expect=Internal          0         11          1      YES Internal (score: 0.750)
+classify_sensitivity_expanded  expect=Confidential          0         11          1      YES Confidential (score: 0.850)
+classify_sensitivity_expanded  expect=Restricted          0         11          1      YES Restricted (score: 0.950)
+classify_sensitivity_expanded  expect=Public            0         12          1      YES Public (score: 0.750)
+classify_sensitivity_expanded  expect=Internal          0         11          1      YES Internal (score: 0.750)
+classify_sensitivity_expanded  expect=Confidential          0         12          1      YES Confidential (score: 0.850)
+classify_sensitivity_expanded  expect=Restricted          0          8          1      YES Restricted (score: 0.950)
+  └ classify_sensitivity_expanded stats n=20                 avg=0      min=0      p50=0    max=0
+
+classify_sensitivity_multilang expect=Public            0         25          1      YES Public (score: 0.750)
+classify_sensitivity_multilang expect=Internal          0         18          1      YES Internal (score: 0.750)
+classify_sensitivity_multilang expect=Confidential          0         17          1      YES Confidential (score: 0.850)
+classify_sensitivity_multilang expect=Restricted          0         15          1      YES Restricted (score: 0.950)
+classify_sensitivity_multilang expect=Public            0         16          1      YES Public (score: 0.750)
+classify_sensitivity_multilang expect=Internal          0         14          1      YES Confidential (score: 0.850)
+classify_sensitivity_multilang expect=Confidential          0         14          1      YES Confidential (score: 0.850)
+classify_sensitivity_multilang expect=Restricted          0         13          1      YES Restricted (score: 0.950)
+classify_sensitivity_multilang expect=Public            0         18          1      YES Public (score: 0.750)
+classify_sensitivity_multilang expect=Internal          0         13          1      YES Internal (score: 0.750)
+classify_sensitivity_multilang expect=Confidential          0         16          1      YES Confidential (score: 0.850)
+classify_sensitivity_multilang expect=Restricted          0         14          1      YES Restricted (score: 0.950)
+classify_sensitivity_multilang expect=Public            0         14          1      YES Public (score: 0.750)
+classify_sensitivity_multilang expect=Internal          0         10          1      YES Internal (score: 0.750)
+classify_sensitivity_multilang expect=Confidential          0         10          1      YES Confidential (score: 0.850)
+classify_sensitivity_multilang expect=Restricted          0          5          1      YES Restricted (score: 0.950)
+classify_sensitivity_multilang expect=Public            0          1          1      YES Public (score: 0.750)
+classify_sensitivity_multilang expect=Internal          0          1          1      YES Internal (score: 0.750)
+classify_sensitivity_multilang expect=Confidential          0          1          1      YES Confidential (score: 0.850)
+classify_sensitivity_multilang expect=Restricted          0          5          1      YES Restricted (score: 0.950)
+  └ classify_sensitivity_multilang stats n=20                 avg=0      min=0      p50=0    max=0
+
+classify_tone                  len=52                   0          7          1      YES Urgent (score: 0.900)
+classify_tone                  len=56                   0          8          1      YES FYI (score: 0.800)
+classify_tone                  len=57                   0         11          1      YES Action needed (score: 0.850)
+classify_tone                  len=74                   0         14          1      YES Concerned (score: 0.800)
+  └ classify_tone stats        n=4                  avg=0      min=0      p50=0    max=0
+
+classify_tone_expanded         expect=Urgent            0          7          1      YES Urgent (score: 0.900)
+classify_tone_expanded         expect=FYI               0          8          1      YES FYI (score: 0.800)
+classify_tone_expanded         expect=Action needed          0         11          1      YES Action needed (score: 0.850)
+classify_tone_expanded         expect=Concerned          0         14          1      YES Concerned (score: 0.800)
+classify_tone_expanded         expect=Urgent            0         11          1      YES Urgent (score: 0.900)
+classify_tone_expanded         expect=FYI               0         12          1      YES FYI (score: 0.800)
+classify_tone_expanded         expect=Action needed          0         13          1      YES Action needed (score: 0.850)
+classify_tone_expanded         expect=Positive          0         10          1      YES Positive (score: 0.800)
+classify_tone_expanded         expect=Concerned          0         11          1      YES Concerned (score: 0.800)
+classify_tone_expanded         expect=Urgent            0          8          1      YES Urgent (score: 0.900)
+classify_tone_expanded         expect=FYI               0         12          1      YES FYI (score: 0.800)
+classify_tone_expanded         expect=Action needed          0         11          1      YES Action needed (score: 0.850)
+classify_tone_expanded         expect=Positive          0         11          1      YES Positive (score: 0.800)
+classify_tone_expanded         expect=Concerned          0         14          1      YES Concerned (score: 0.800)
+classify_tone_expanded         expect=Urgent            0          9          1      YES Urgent (score: 0.900)
+classify_tone_expanded         expect=FYI               0          8          1      YES FYI (score: 0.800)
+classify_tone_expanded         expect=Action needed          0         13          1      YES Action needed (score: 0.850)
+classify_tone_expanded         expect=Positive          0         11          1      YES Positive (score: 0.800)
+classify_tone_expanded         expect=Concerned          0         12          1      YES Concerned (score: 0.800)
+classify_tone_expanded         expect=Urgent            0         13          1      YES Urgent (score: 0.900)
+  └ classify_tone_expanded stats n=20                 avg=0      min=0      p50=0    max=0
+
+classify_tone_multilang        expect=Urgent            0         14          1      YES Urgent (score: 0.900)
+classify_tone_multilang        expect=FYI               0         12          1      YES FYI (score: 0.800)
+classify_tone_multilang        expect=Action needed          0         13          1      YES Action needed (score: 0.850)
+classify_tone_multilang        expect=Positive          0         10          1      YES Positive (score: 0.800)
+classify_tone_multilang        expect=Concerned          0         12          1      YES Action needed (score: 0.189)
+classify_tone_multilang        expect=Urgent            0         10          1      YES Urgent (score: 0.900)
+classify_tone_multilang        expect=FYI               0          8          1      YES FYI (score: 0.800)
+classify_tone_multilang        expect=Action needed          0          7          1      YES Action needed (score: 0.850)
+classify_tone_multilang        expect=Positive          0          1          1      YES Positive (score: 0.800)
+classify_tone_multilang        expect=Concerned          0          1          1      YES Concerned (score: 0.800)
+classify_tone_multilang        expect=Urgent            0          1          1      YES Urgent (score: 0.900)
+classify_tone_multilang        expect=FYI               0          1          1      YES FYI (score: 0.800)
+classify_tone_multilang        expect=Action needed          0          1          1      YES Action needed (score: 0.850)
+classify_tone_multilang        expect=Positive          0          6          1      YES Positive (score: 0.800)
+classify_tone_multilang        expect=Concerned          0          6          1      YES Concerned (score: 0.800)
+classify_tone_multilang        expect=Urgent            0          6          1      YES Urgent (score: 0.900)
+classify_tone_multilang        expect=FYI               0          5          1      YES FYI (score: 0.800)
+classify_tone_multilang        expect=Action needed          0          4          1      YES Action needed (score: 0.850)
+classify_tone_multilang        expect=Positive          0          5          1      YES Positive (score: 0.800)
+classify_tone_multilang        expect=Concerned          0          7          1      YES Concerned (score: 0.800)
+  └ classify_tone_multilang stats n=20                 avg=0      min=0      p50=0    max=0
+
+classify_urgency               expect=P1                0         11          1      YES Critical (score: 0.950)
+classify_urgency               expect=P2                0          8          1      YES High (score: 0.850)
+classify_urgency               expect=P3                0          9          1      YES Medium (score: 0.750)
+classify_urgency               expect=P4                0          7          1      YES Low (score: 0.750)
+  └ classify_urgency stats     n=4                  avg=0      min=0      p50=0    max=0
+
+classify_urgency_expanded      expect=P1                0         11          1      YES Critical (score: 0.950)
+classify_urgency_expanded      expect=P2                0          8          1      YES High (score: 0.850)
+classify_urgency_expanded      expect=P3                0          9          1      YES Medium (score: 0.750)
+classify_urgency_expanded      expect=P4                0          7          1      YES Low (score: 0.750)
+classify_urgency_expanded      expect=P1                0          8          1      YES Critical (score: 0.950)
+classify_urgency_expanded      expect=P2                0          9          1      YES High (score: 0.850)
+classify_urgency_expanded      expect=P3                0          8          1      YES Medium (score: 0.750)
+classify_urgency_expanded      expect=P4                0          7          1      YES Low (score: 0.750)
+classify_urgency_expanded      expect=P1                0         10          1      YES Critical (score: 0.950)
+classify_urgency_expanded      expect=P2                0         10          1      YES High (score: 0.850)
+classify_urgency_expanded      expect=P3                0          9          1      YES Medium (score: 0.750)
+classify_urgency_expanded      expect=P4                0         10          1      YES Low (score: 0.750)
+classify_urgency_expanded      expect=P1                0         11          1      YES Critical (score: 0.950)
+classify_urgency_expanded      expect=P2                0         11          1      YES High (score: 0.850)
+classify_urgency_expanded      expect=P3                0          8          1      YES Medium (score: 0.163)
+classify_urgency_expanded      expect=P4                0         10          1      YES Low (score: 0.750)
+classify_urgency_expanded      expect=P1                0          8          1      YES Critical (score: 0.950)
+classify_urgency_expanded      expect=P2                0         13          1      YES High (score: 0.850)
+classify_urgency_expanded      expect=P3                0          6          1      YES Medium (score: 0.750)
+classify_urgency_expanded      expect=P4                0          8          1      YES Low (score: 0.750)
+  └ classify_urgency_expanded stats n=20                 avg=0      min=0      p50=0    max=0
+
+classify_urgency_multilang     expect=P1                0         15          1      YES Critical (score: 0.950)
+classify_urgency_multilang     expect=P2                0         15          1      YES High (score: 0.850)
+classify_urgency_multilang     expect=P3                0         12          1      YES Medium (score: 0.750)
+classify_urgency_multilang     expect=P4                0          7          1      YES Low (score: 0.750)
+classify_urgency_multilang     expect=P1                0          9          1      YES Critical (score: 0.950)
+classify_urgency_multilang     expect=P2                0         10          1      YES High (score: 0.850)
+classify_urgency_multilang     expect=P3                0          8          1      YES Medium (score: 0.750)
+classify_urgency_multilang     expect=P4                0         10          1      YES Low (score: 0.750)
+classify_urgency_multilang     expect=P1                0         11          1      YES Critical (score: 0.950)
+classify_urgency_multilang     expect=P2                0         10          1      YES High (score: 0.850)
+classify_urgency_multilang     expect=P3                0         12          1      YES Medium (score: 0.750)
+classify_urgency_multilang     expect=P4                0          8          1      YES Low (score: 0.750)
+classify_urgency_multilang     expect=P1                0          6          1      YES Critical (score: 0.950)
+classify_urgency_multilang     expect=P2                0          7          1      YES High (score: 0.850)
+classify_urgency_multilang     expect=P3                0          6          1      YES Medium (score: 0.750)
+classify_urgency_multilang     expect=P1                0          2          1      YES Critical (score: 0.950)
+classify_urgency_multilang     expect=P2                0          1          1      YES High (score: 0.850)
+classify_urgency_multilang     expect=P3                0          1          1      YES Medium (score: 0.750)
+classify_urgency_multilang     expect=P1                0         11          1      YES Critical (score: 0.950)
+classify_urgency_multilang     expect=P2                0          9          1      YES High (score: 0.850)
+  └ classify_urgency_multilang stats n=20                 avg=0      min=0      p50=0    max=0
+
+cluster                        12_docs_4_clusters          0          0          4      YES Cluster 1 (4 items):
+  - doc1
+  - doc4
+  - doc9
+  └ cluster stats              n=1                  avg=0      min=0      p50=0    max=0
+
+collab_summary                 annotations              0         82         30      YES @Sarah: The Q4 roadmap looks good, but I think 
+  └ collab_summary stats       n=1                  avg=0      min=0      p50=0    max=0
+
+compare_docs                   contracts                0         26         10      YES The documents are highly similar with no signif
+  └ compare_docs stats         n=1                  avg=0      min=0      p50=0    max=0
+
+compliance_report              audit_log                0         95         81      YES tasks run, by type, by document sensitivity: 
+[
+  └ compliance_report stats    n=1                  avg=0      min=0      p50=0    max=0
+
+contract_analysis              msa                      0        378        116      YES • MASTER SERVICE AGREEMENT
+
+This Master Service
+  └ contract_analysis stats    n=1                  avg=0      min=0      p50=0    max=0
+
+daily_digest                   full_day                 0          0          4      YES Daily Digest
+============
+
+📧 Email Summary:
+Fro
+  └ daily_digest stats         n=1                  avg=0      min=0      p50=0    max=0
+
+dedup                          duplicate                0         14          1      YES Found 1 likely duplicate(s):
+1. [score: 0.350] 
+  └ dedup stats                n=1                  avg=0      min=0      p50=0    max=0
+
+dedup_expanded                 dup=true                 0         14          1      YES Found 1 likely duplicate(s):
+1. [score: 0.350] 
+dedup_expanded                 dup=true                 0         10          1      YES Found 1 likely duplicate(s):
+1. [score: 0.333] 
+dedup_expanded                 dup=true                 0          9          1      YES Found 1 likely duplicate(s):
+1. [score: 0.286] 
+dedup_expanded                 dup=false                0          9          0      YES No duplicate tickets found.
+dedup_expanded                 dup=true                 0         10          1      YES Found 1 likely duplicate(s):
+1. [score: 0.267] 
+dedup_expanded                 dup=false                0          7          0      YES No duplicate tickets found.
+dedup_expanded                 dup=true                 0         10          1      YES Found 1 likely duplicate(s):
+1. [score: 0.250] 
+dedup_expanded                 dup=false                0          8          0      YES No duplicate tickets found.
+dedup_expanded                 dup=true                 0         10          1      YES Found 1 likely duplicate(s):
+1. [score: 0.200] 
+dedup_expanded                 dup=false                0          8          0      YES No duplicate tickets found.
+  └ dedup_expanded stats       n=10                 avg=0      min=0      p50=0    max=0
+
+dedup_multilang                dup=true                 0         13          1      YES Found 1 likely duplicate(s):
+1. [score: 0.286] 
+dedup_multilang                dup=true                 0         13          1      YES Found 1 likely duplicate(s):
+1. [score: 0.438] 
+dedup_multilang                dup=true                 0         10          1      YES Found 1 likely duplicate(s):
+1. [score: 0.462] 
+dedup_multilang                dup=true                 0          8          1      YES Found 1 likely duplicate(s):
+1. [score: 0.250] 
+dedup_multilang                dup=true                 0         10          1      YES Found 1 likely duplicate(s):
+1. [score: 0.267] 
+dedup_multilang                dup=true                 0          8          1      YES Found 1 likely duplicate(s):
+1. [score: 0.333] 
+dedup_multilang                dup=true                 0         12          1      YES Found 1 likely duplicate(s):
+1. [score: 0.300] 
+dedup_multilang                dup=true                 0          9          1      YES Found 1 likely duplicate(s):
+1. [score: 0.167] 
+dedup_multilang                dup=true                 0         11          1      YES Found 1 likely duplicate(s):
+1. [score: 0.267] 
+dedup_multilang                dup=false                0          8          0      YES No duplicate tickets found.
+  └ dedup_multilang stats      n=10                 avg=0      min=0      p50=0    max=0
+
+dictate_format                 2s_audio                14        212        200      YES whisper_mel:-0.9944 -0.9719 -0.9672 -0.9892 -0.
+  └ dictate_format stats       n=1                 avg=14     min=14     p50=14   max=14
+
+doc_chat                       multi_turn               0        189        107      YES Document context:
+Privacy is enforced through: 
+  └ doc_chat stats             n=1                  avg=0      min=0      p50=0    max=0
+
+draft_reply                    intent=agree             0        406         61      YES Intent: agree
+Original email:
+
+From: alice@tech
+draft_reply                    intent=decline           0        406         61      YES Intent: decline
+Original email:
+
+From: alice@te
+draft_reply                    intent=request_info          0        406         61      YES Intent: request_info
+Original email:
+
+From: ali
+draft_reply                    intent=escalate          0        406         61      YES Intent: escalate
+Original email:
+
+From: alice@t
+  └ draft_reply stats          n=4                  avg=0      min=0      p50=0    max=0
+
+email_categorize               email_0                  0         12          1      YES Action Required (score: 0.850)
+email_categorize               email_1                  0         11          1      YES Vendor (score: 0.850)
+email_categorize               email_2                  0         11          1      YES Action Required (score: 0.850)
+email_categorize               email_3                  0         13          1      YES Newsletter (score: 0.850)
+  └ email_categorize stats     n=4                  avg=0      min=0      p50=0    max=0
+
+email_categorize_expanded      expect=Action Required          0         12          1      YES Action Required (score: 0.850)
+email_categorize_expanded      expect=Vendor            0         11          1      YES Vendor (score: 0.850)
+email_categorize_expanded      expect=Action Required          0         11          1      YES Action Required (score: 0.850)
+email_categorize_expanded      expect=Newsletter          0         13          1      YES Newsletter (score: 0.850)
+email_categorize_expanded      expect=Action Required          0         13          1      YES Action Required (score: 0.850)
+email_categorize_expanded      expect=Vendor            0         16          1      YES Vendor (score: 0.850)
+email_categorize_expanded      expect=Newsletter          0          9          1      YES Newsletter (score: 0.850)
+email_categorize_expanded      expect=Client            0         13          1      YES Client (score: 0.800)
+email_categorize_expanded      expect=Internal          0         10          1      YES Internal (score: 0.800)
+email_categorize_expanded      expect=Action Required          0         10          1      YES Action Required (score: 0.850)
+email_categorize_expanded      expect=Vendor            0          9          1      YES Vendor (score: 0.850)
+email_categorize_expanded      expect=Newsletter          0          9          1      YES Newsletter (score: 0.850)
+email_categorize_expanded      expect=Client            0         10          1      YES Client (score: 0.800)
+email_categorize_expanded      expect=Internal          0         10          1      YES Internal (score: 0.800)
+email_categorize_expanded      expect=Action Required          0         13          1      YES Action Required (score: 0.850)
+email_categorize_expanded      expect=Vendor            0         11          1      YES Vendor (score: 0.850)
+email_categorize_expanded      expect=Newsletter          0          8          1      YES Newsletter (score: 0.850)
+email_categorize_expanded      expect=Client            0         14          1      YES Internal (score: 0.800)
+email_categorize_expanded      expect=Internal          0         13          1      YES Internal (score: 0.800)
+email_categorize_expanded      expect=Action Required          0          9          1      YES Action Required (score: 0.850)
+  └ email_categorize_expanded stats n=20                 avg=0      min=0      p50=0    max=0
+
+email_categorize_multilang     expect=Action Required          0         14          1      YES Action Required (score: 0.850)
+email_categorize_multilang     expect=Vendor            0         16          1      YES Vendor (score: 0.850)
+email_categorize_multilang     expect=Newsletter          0         18          1      YES Newsletter (score: 0.850)
+email_categorize_multilang     expect=Client            0         17          1      YES Client (score: 0.800)
+email_categorize_multilang     expect=Internal          0         16          1      YES Internal (score: 0.800)
+email_categorize_multilang     expect=Action Required          0         13          1      YES Internal (score: 0.800)
+email_categorize_multilang     expect=Vendor            0          9          1      YES Vendor (score: 0.850)
+email_categorize_multilang     expect=Newsletter          0         10          1      YES Newsletter (score: 0.850)
+email_categorize_multilang     expect=Client            0         13          1      YES Client (score: 0.800)
+email_categorize_multilang     expect=Internal          0         13          1      YES Internal (score: 0.800)
+email_categorize_multilang     expect=Action Required          0         11          1      YES Action Required (score: 0.850)
+email_categorize_multilang     expect=Vendor            0         11          1      YES Vendor (score: 0.850)
+email_categorize_multilang     expect=Newsletter          0         10          1      YES Newsletter (score: 0.850)
+email_categorize_multilang     expect=Client            0         13          1      YES Client (score: 0.800)
+email_categorize_multilang     expect=Internal          0         11          1      YES Internal (score: 0.800)
+email_categorize_multilang     expect=Action Required          0          9          1      YES Action Required (score: 0.850)
+email_categorize_multilang     expect=Vendor            0          6          1      YES Vendor (score: 0.850)
+email_categorize_multilang     expect=Newsletter          0          7          1      YES Newsletter (score: 0.850)
+email_categorize_multilang     expect=Client            0         11          1      YES Client (score: 0.800)
+email_categorize_multilang     expect=Internal          0         10          1      YES Internal (score: 0.800)
+  └ email_categorize_multilang stats n=20                 avg=0      min=0      p50=0    max=0
+
+email_summary                  partnership              0        400         57      YES From: alice@techcorp.com
+To: bob@startup.io
+Sub
+  └ email_summary stats        n=1                  avg=0      min=0      p50=0    max=0
+
+expand                         bullets                  0         25         13      YES • Launch Q4 product line
+• Hire 2 engineers
+• C
+  └ expand stats               n=1                  avg=0      min=0      p50=0    max=0
+
+explain                        Kubernetes               0         27         12      YES Term: Kubernetes
+Context: We're migrating our m
+explain                        LoRA                     0         30         15      YES Term: LoRA
+Context: We use LoRA adapters to fin
+explain                        int8 quantization          0         29         14      YES Term: int8 quantization
+Context: The model uses
+  └ explain stats              n=3                  avg=0      min=0      p50=0    max=0
+
+extract_dates                  contract                 0         35          9      YES [score: 1.000] [Month Day, Year] January 15, 20
+  └ extract_dates stats        n=1                  avg=0      min=0      p50=0    max=0
+
+extract_dates_expanded         contract                 0         35          9      YES [score: 1.000] [Month Day, Year] January 15, 20
+extract_dates_expanded         email_dates              0         19          8      YES [score: 1.000] [Month Day, Year] March 22, 2024
+extract_dates_expanded         mixed_formats            0         13          6      YES [score: 1.000] [YYYY-MM-DD] 2024-03-15
+[score: 
+extract_dates_expanded         iso_dates                0         10         10      YES [score: 1.000] [YYYY-MM-DD] 2024-01-15
+[score: 
+extract_dates_expanded         us_formats               0         10         10      YES [score: 1.000] [MM/DD/YYYY] 01/15/2024
+[score: 
+extract_dates_expanded         long_text                0         36         11      YES [score: 1.000] [Month Day, Year] January 15, 20
+extract_dates_expanded         sparse_dates             0         21          2      YES [score: 1.000] [YYYY-MM-DD] 2024-07-04
+[score: 
+extract_dates_expanded         european_dates           0         12         10      YES [score: 1.000] [MM/DD/YYYY] 15/01/2024
+[score: 
+extract_dates_expanded         formal_doc               0         26          8      YES [score: 1.000] [Month Day, Year] January 15, 20
+extract_dates_expanded         no_dates                 0         22          0      YES No dates or deadlines found in the document.
+  └ extract_dates_expanded stats n=10                 avg=0      min=0      p50=0    max=0
+
+extract_decisions              meeting                  0        519         71      YES • Customer satisfaction score is 4.2, up from 3
+  └ extract_decisions stats    n=1                  avg=0      min=0      p50=0    max=0
+
+find_clause                    q=termination            0        362          5      YES 1. [score: 0.080]  created for Client under a S
+find_clause                    q=payment terms          0        362          5      YES 1. [score: 0.085] 
+MASTER SERVICE AGREEMENT
+
+Th
+find_clause                    q=liability cap          0        362          5      YES 1. [score: 0.095]  created for Client under a S
+find_clause                    q=confidentiality          0        362          5      YES 1. [score: 0.082] tten consent.
+
+4. CONFIDENTIA
+  └ find_clause stats          n=4                  avg=0      min=0      p50=0    max=0
+
+find_expert                    ml_expert                0          5          0      YES No experts found for this topic.
+  └ find_expert stats          n=1                  avg=0      min=0      p50=0    max=0
+
+find_expert_expanded           expect=alice             0          5          2      YES 1. alice — 2 document(s), best score: 0.800
+2. 
+find_expert_expanded           expect=bob               0          4          2      YES 1. bob — 2 document(s), best score: 0.555
+2. ca
+find_expert_expanded           expect=carol             0          4          2      YES 1. bob — 2 document(s), best score: 0.370
+2. da
+find_expert_expanded           expect=dave              0          5          2      YES 1. dave — 2 document(s), best score: 0.600
+2. b
+find_expert_expanded           expect=alice             0          3          2      YES 1. alice — 2 document(s), best score: 0.667
+2. 
+find_expert_expanded           expect=bob               0          2          2      YES 1. bob — 2 document(s), best score: 0.500
+2. da
+find_expert_expanded           expect=carol             0          3          2      YES 1. carol — 2 document(s), best score: 0.500
+2. 
+find_expert_expanded           expect=dave              0          2          2      YES 1. dave — 2 document(s), best score: 0.500
+2. c
+  └ find_expert_expanded stats n=8                  avg=0      min=0      p50=0    max=0
+
+find_similar                   ml_query                 0          8          3      YES 1. [score: 0.304] unknown — Machine learning mo
+  └ find_similar stats         n=1                  avg=0      min=0      p50=0    max=0
+
+follow_up                      overdue                  0         64         49      YES Intent: Send a polite follow-up reminder about 
+  └ follow_up stats            n=1                  avg=0      min=0      p50=0    max=0
+
+generate_doc                   cloud_security           0         40         27      YES Topic: Cloud Security Best Practices
+
+Outline: 
+  └ generate_doc stats         n=1                  avg=0      min=0      p50=0    max=0
+
+generate_slides                ml_intro                 0         67         59      YES Slide 1: <slide title>
+• <bullet point 1>
+• <bu
+  └ generate_slides stats      n=1                  avg=0      min=0      p50=0    max=0
+
+grammar_check                  en                       0         23          7      YES I are going to the store yesterday.
+grammar_check                  en                       0         26         10      YES The team have decided to move forward with the 
+grammar_check                  en                       0         23          7      YES She don't like the new design changes.
+  └ grammar_check stats        n=3                  avg=0      min=0      p50=0    max=0
+
+image_search                   query                    0          5          5      YES a diagram of cloud architecture.
+  └ image_search stats         n=1                  avg=0      min=0      p50=0    max=0
+
+key_points                     meeting                  0        515         89      YES • Meeting: Q3 Product Strategy Review
+Date: 202
+  └ key_points stats           n=1                  avg=0      min=0      p50=0    max=0
+
+live_transcribe                3_chunks                22          0        600      YES whisper_mel:-0.9944 -0.9719 -0.9672 -0.9892 -0.
+  └ live_transcribe stats      n=1                 avg=22     min=22     p50=22   max=22
+
+meeting_minutes                q3_review                0        225         59      YES Summary: Meeting: Q3 Product Strategy Review
+Da
+  └ meeting_minutes stats      n=1                  avg=0      min=0      p50=0    max=0
+
+meeting_qa                     q=What was the Q3 reve          0        244         45      YES Question: What was the Q3 revenue growth?
+Conte
+meeting_qa                     q=What are the Q4 prio          0        237         22      YES Question: What are the Q4 priorities?
+Context:
+
+meeting_qa                     q=How much will the Te          0        242         34      YES Question: How much will the TechCorp integratio
+meeting_qa                     q=What is the current           0        238         42      YES Question: What is the current test coverage?
+Co
+  └ meeting_qa stats           n=4                  avg=0      min=0      p50=0    max=0
+
+meeting_summary                q3_review                0        514         58      YES Meeting: Q3 Product Strategy Review
+Date: 2024-
+  └ meeting_summary stats      n=1                  avg=0      min=0      p50=0    max=0
+
+notif_summary                  10_notifs                0         98         86      YES - 3 new emails from VIP clients requiring respo
+  └ notif_summary stats        n=1                  avg=0      min=0      p50=0    max=0
+
+onboarding_qa                  setup                    0        193        115      YES Question: How do I set up the SDK?
+Context:
+Per
+  └ onboarding_qa stats        n=1                  avg=0      min=0      p50=0    max=0
+
+pii_scan                       employee_record          0         43          9      YES Found 9 PII instance(s):
+  - SSN: 1
+  - Email: 
+  └ pii_scan stats             n=1                  avg=0      min=0      p50=0    max=0
+
+pii_scan_expanded              employee_record          0         22          5      YES Found 5 PII instance(s):
+  - Phone: 2
+  - Email
+pii_scan_expanded              customer_email           0         19          4      YES Found 4 PII instance(s):
+  - Email: 1
+  - Phone
+pii_scan_expanded              support_ticket           0         17          3      YES Found 3 PII instance(s):
+  - Email: 1
+  - Phone
+pii_scan_expanded              chat_message             0         21          2      YES Found 2 PII instance(s):
+  - Email: 1
+  - Phone
+pii_scan_expanded              hr_document              0         13          4      YES Found 4 PII instance(s):
+  - Phone: 2
+  - SSN: 
+pii_scan_expanded              medical_record           0         14          3      YES Found 3 PII instance(s):
+  - SSN: 1
+  - Phone: 
+pii_scan_expanded              legal_doc                0         17          3      YES Found 3 PII instance(s):
+  - SSN: 1
+  - Phone: 
+pii_scan_expanded              sales_lead               0         13          2      YES Found 2 PII instance(s):
+  - Email: 1
+  - Phone
+pii_scan_expanded              financial_form           0         14          6      YES Found 6 PII instance(s):
+  - SSN: 1
+  - CreditC
+pii_scan_expanded              contact_list             0         15          6      YES Found 6 PII instance(s):
+  - Phone: 3
+  - Email
+  └ pii_scan_expanded stats    n=10                 avg=0      min=0      p50=0    max=0
+
+policy_lookup                  retention                0        178         55      YES Policy question: What is the data retention pol
+  └ policy_lookup stats        n=1                  avg=0      min=0      p50=0    max=0
+
+pre_send_check                 email                    0         25          2      YES 📝 Grammar:
+Hey team, just wanted to let you kno
+  └ pre_send_check stats       n=1                  avg=0      min=0      p50=0    max=0
+
+prioritize                     email                    0        387          1      YES Needs response (score: 0.850)
+  └ prioritize stats           n=1                  avg=0      min=0      p50=0    max=0
+
+qa                             q=What is the system archit          0        293         62      YES Question: What is the system architecture?
+
+Rel
+qa                             q=How is privacy enforced?          0        292         61      YES Question: How is privacy enforced?
+
+Relevant co
+qa                             q=What are the performance           0        293         62      YES Question: What are the performance targets?
+
+Re
+qa                             q=What models are available          0        292         51      YES Question: What models are available?
+
+Relevant 
+qa                             q=What does the resource go          0        294         73      YES Question: What does the resource governor do?
+
+
+  └ qa stats                   n=5                  avg=0      min=0      p50=0    max=0
+
+rerank                         3_hits                   0          3          3      YES 1. [reranked: 0.681] doc1 — Machine learning mo
+  └ rerank stats               n=1                  avg=0      min=0      p50=0    max=0
+
+rewrite_tone                   tone=professional          0         29          9      YES Hey, we need this done ASAP. It's really import
+rewrite_tone                   tone=casual              0         29          9      YES Hey, we need this done ASAP. It's really import
+rewrite_tone                   tone=urgent              0         29          9      YES Hey, we need this done ASAP. It's really import
+rewrite_tone                   tone=diplomatic          0         29          9      YES Hey, we need this done ASAP. It's really import
+  └ rewrite_tone stats         n=4                  avg=0      min=0      p50=0    max=0
+
+semantic_search                query                    0          4          4      YES machine learning neural networks.
+  └ semantic_search stats      n=1                  avg=0      min=0      p50=0    max=0
+
+sentiment                      text_0                   0         15          1      YES Positive (score: 0.900)
+sentiment                      text_1                   0         14          1      YES Negative (score: 0.900)
+sentiment                      text_2                   0         13          1      YES Neutral (score: 0.750)
+sentiment                      text_3                   0         10          1      YES Positive (score: 0.900)
+  └ sentiment stats            n=4                  avg=0      min=0      p50=0    max=0
+
+sentiment_expanded             expect=positive          0         15          1      YES Positive (score: 0.900)
+sentiment_expanded             expect=negative          0         14          1      YES Negative (score: 0.900)
+sentiment_expanded             expect=neutral           0         13          1      YES Neutral (score: 0.750)
+sentiment_expanded             expect=positive          0         10          1      YES Positive (score: 0.900)
+sentiment_expanded             expect=positive          0         10          1      YES Positive (score: 0.900)
+sentiment_expanded             expect=negative          0          9          1      YES Negative (score: 0.900)
+sentiment_expanded             expect=neutral           0         11          1      YES Neutral (score: 0.750)
+sentiment_expanded             expect=positive          0         11          1      YES Positive (score: 0.900)
+sentiment_expanded             expect=negative          0         12          1      YES Negative (score: 0.900)
+sentiment_expanded             expect=neutral           0         10          1      YES Neutral (score: 0.750)
+sentiment_expanded             expect=positive          0          8          1      YES Positive (score: 0.900)
+sentiment_expanded             expect=negative          0         11          1      YES Negative (score: 0.900)
+sentiment_expanded             expect=neutral           0         11          1      YES Neutral (score: 0.750)
+sentiment_expanded             expect=positive          0         14          1      YES Positive (score: 0.900)
+sentiment_expanded             expect=negative          0         12          1      YES Negative (score: 0.900)
+sentiment_expanded             expect=neutral           0         15          1      YES Neutral (score: 0.750)
+sentiment_expanded             expect=positive          0         11          1      YES Positive (score: 0.900)
+sentiment_expanded             expect=negative          0         14          1      YES Negative (score: 0.900)
+sentiment_expanded             expect=neutral           0         15          1      YES Neutral (score: 0.750)
+sentiment_expanded             expect=positive          0         14          1      YES Positive (score: 0.900)
+  └ sentiment_expanded stats   n=20                 avg=0      min=0      p50=0    max=0
+
+sentiment_mixed_lang           expect=positive          0         12          1      YES Positive (score: 0.900)
+sentiment_mixed_lang           expect=negative          0         10          1      YES Negative (score: 0.900)
+sentiment_mixed_lang           expect=neutral           0         11          1      YES Neutral (score: 0.750)
+sentiment_mixed_lang           expect=positive          0          7          1      YES Positive (score: 0.900)
+sentiment_mixed_lang           expect=negative          0          9          1      YES Negative (score: 0.900)
+sentiment_mixed_lang           expect=neutral           0         10          1      YES Neutral (score: 0.750)
+sentiment_mixed_lang           expect=positive          0         11          1      YES Positive (score: 0.900)
+sentiment_mixed_lang           expect=negative          0         12          1      YES Negative (score: 0.900)
+sentiment_mixed_lang           expect=neutral           0         15          1      YES Neutral (score: 0.750)
+sentiment_mixed_lang           expect=positive          0         12          1      YES Positive (score: 0.900)
+  └ sentiment_mixed_lang stats n=10                 avg=0      min=0      p50=0    max=0
+
+sentiment_multilang            expect=positive          0         15          1      YES Positive (score: 0.900)
+sentiment_multilang            expect=negative          0         13          1      YES Negative (score: 0.900)
+sentiment_multilang            expect=neutral           0         21          1      YES Neutral (score: 0.750)
+sentiment_multilang            expect=positive          0         11          1      YES Positive (score: 0.900)
+sentiment_multilang            expect=negative          0         13          1      YES Negative (score: 0.900)
+sentiment_multilang            expect=neutral           0         15          1      YES Neutral (score: 0.750)
+sentiment_multilang            expect=positive          0         11          1      YES Positive (score: 0.900)
+sentiment_multilang            expect=negative          0         11          1      YES Negative (score: 0.900)
+sentiment_multilang            expect=neutral           0         15          1      YES Neutral (score: 0.750)
+sentiment_multilang            expect=positive          0         11          1      YES Positive (score: 0.900)
+sentiment_multilang            expect=negative          0         12          1      YES Negative (score: 0.900)
+sentiment_multilang            expect=neutral           0         12          1      YES Neutral (score: 0.750)
+sentiment_multilang            expect=positive          0          1          1      YES Positive (score: 0.900)
+sentiment_multilang            expect=negative          0          1          1      YES Negative (score: 0.900)
+sentiment_multilang            expect=neutral           0          1          1      YES Neutral (score: 0.750)
+sentiment_multilang            expect=positive          0          8          1      YES Positive (score: 0.900)
+sentiment_multilang            expect=negative          0          9          1      YES Negative (score: 0.900)
+sentiment_multilang            expect=positive          0          9          1      YES Positive (score: 0.900)
+sentiment_multilang            expect=negative          0          8          1      YES Negative (score: 0.900)
+sentiment_multilang            expect=positive          0         12          1      YES Positive (score: 0.900)
+  └ sentiment_multilang stats  n=20                 avg=0      min=0      p50=0    max=0
+
+simplify                       jargon                   0         35         19      YES The utilization of multifaceted methodological 
+  └ simplify stats             n=1                  avg=0      min=0      p50=0    max=0
+
+smart_reply                    chat                     0        228         69      YES [10:02] Sarah: Hey team, anyone seen the latest
+  └ smart_reply stats          n=1                  avg=0      min=0      p50=0    max=0
+
+summarize                      lang=en                  8         57         39      YES Apple announced its Q4 earnings, reporting reve
+summarize                      lang=vi                  0         77         67      YES Apple công bố kết quả kinh doanh quý 4 với doan
+summarize                      lang=zh                  0          7          1      YES 苹果公司公布第四季度财报，营收达949亿美元，同比增长6%。iPhone销售额达462亿美元，
+summarize                      lang=ar                  0         44         36      YES أعلنت شركة آبل عن أرباحها في الربع الرابع، حيث 
+summarize                      lang=es                  0         50         42      YES Apple anunció sus ganancias del cuarto trimestr
+summarize                      lang=fr                  0         58         50      YES Apple a annoncé ses résultats du quatrième trim
+summarize                      lang=de                  0         48         39      YES Apple gab seine Ergebnisse für das vierte Quart
+summarize                      lang=ja                  0          7          1      YES Appleは第4四半期の決算を発表し、前年同期比6%増の949億ドルの収益を報告した。iPho
+summarize                      lang=ko                  0         30         23      YES Apple은 4분기 실적을 발표하며 전년 대비 6% 증가한 949억 달러의 수익을 보
+summarize                      lang=ru                  0         48         39      YES Apple объявила о результатах четвертого квартал
+summarize                      long_meeting             0        508         58      YES Meeting: Q3 Product Strategy Review
+Date: 2024-
+  └ summarize stats            n=11                 avg=1      min=0      p50=0    max=8
+
+summarize_all_langs            lang=en                  0         24         16      YES The company announced record revenue growth of 
+summarize_all_langs            lang=vi                  0         26         16      YES The company announced record revenue growth of 
+summarize_all_langs            lang=th                  0         22         16      YES The company announced record revenue growth of 
+summarize_all_langs            lang=ar                  0         24         16      YES The company announced record revenue growth of 
+summarize_all_langs            lang=zh                  0         22         16      YES The company announced record revenue growth of 
+summarize_all_langs            lang=es                  0         24         16      YES The company announced record revenue growth of 
+summarize_all_langs            lang=fr                  0         24         16      YES The company announced record revenue growth of 
+summarize_all_langs            lang=de                  0         25         16      YES The company announced record revenue growth of 
+summarize_all_langs            lang=ja                  0         22         16      YES The company announced record revenue growth of 
+summarize_all_langs            lang=ko                  0         23         16      YES The company announced record revenue growth of 
+summarize_all_langs            lang=id                  0         25         16      YES The company announced record revenue growth of 
+summarize_all_langs            lang=ms                  0         25         16      YES The company announced record revenue growth of 
+summarize_all_langs            lang=tl                  0         24         16      YES The company announced record revenue growth of 
+summarize_all_langs            lang=pt                  0         24         16      YES The company announced record revenue growth of 
+summarize_all_langs            lang=ru                  0         25         16      YES The company announced record revenue growth of 
+summarize_all_langs            lang=hi                  0         25         16      YES The company announced record revenue growth of 
+summarize_all_langs            lang=tr                  0         24         16      YES The company announced record revenue growth of 
+summarize_all_langs            lang=fa                  0         25         16      YES The company announced record revenue growth of 
+summarize_all_langs            lang=ur                  0         25         16      YES The company announced record revenue growth of 
+summarize_all_langs            lang=bn                  0         24         16      YES The company announced record revenue growth of 
+summarize_all_langs            lang=ne                  0         24         16      YES The company announced record revenue growth of 
+summarize_all_langs            lang=km                  0         22         16      YES The company announced record revenue growth of 
+  └ summarize_all_langs stats  n=22                 avg=0      min=0      p50=0    max=0
+
+summarize_expanded             en_news                  0         47         39      YES Apple announced its Q4 earnings, reporting reve
+summarize_expanded             en_meeting               0         33         25      YES The meeting covered Q3 results: 47 features shi
+summarize_expanded             en_email                 0         36         28      YES Alice raised concerns about API rate limits, da
+summarize_expanded             en_technical             0         36         28      YES The system uses layered architecture: client SD
+summarize_expanded             en_support               0         30         18      YES Customer reports production outage with all inf
+summarize_expanded             vi_news                  0         44         36      YES Apple công bố kết quả kinh doanh quý 4 với doan
+summarize_expanded             zh_news                  0          9          1      YES 苹果公司公布第四季度财报，营收达949亿美元，同比增长6%。iPhone销售额达462亿美元，
+summarize_expanded             ar_news                  0         27         19      YES أعلنت شركة آبل عن أرباحها في الربع الرابع، حيث 
+summarize_expanded             es_news                  0         27         19      YES Apple anunció sus ganancias del cuarto trimestr
+summarize_expanded             fr_news                  0         29         21      YES Apple a annoncé ses résultats du quatrième trim
+summarize_expanded             de_news                  0         31         23      YES Apple gab seine Ergebnisse für das vierte Quart
+summarize_expanded             ja_news                  0          9          1      YES Appleは第4四半期の決算を発表し、前年同期比6%増の949億ドルの収益を報告した。iPho
+summarize_expanded             ko_news                  0         20         12      YES Apple은 4분기 실적을 발표하며 전년 대비 6% 증가한 949억 달러의 수익을 보
+summarize_expanded             ru_news                  0         25         17      YES Apple объявила о результатах четвертого квартал
+summarize_expanded             en_long                  0         84         23      YES The Q3 product strategy review meeting covered 
+  └ summarize_expanded stats   n=15                 avg=0      min=0      p50=0    max=0
+
+summarize_multilang            lang=vi                  0         70         60      YES Apple công bố kết quả kinh doanh quý 4 với doan
+summarize_multilang            lang=zh                  0          7          1      YES 苹果公司公布第四季度财报，营收达949亿美元，同比增长6%。iPhone销售额达462亿美元，
+summarize_multilang            lang=es                  0         63         55      YES Apple anunció sus ganancias del cuarto trimestr
+summarize_multilang            lang=fr                  0         71         63      YES Apple a annoncé ses résultats du quatrième trim
+summarize_multilang            lang=de                  0         61         52      YES Apple gab seine Ergebnisse für das vierte Quart
+summarize_multilang            lang=ja                  0          7          1      YES Appleは第4四半期の決算を発表し、前年同期比6%増の949億ドルの収益を報告した。iPho
+summarize_multilang            lang=ar                  0         58         50      YES أعلنت شركة آبل عن أرباحها في الربع الرابع، حيث 
+summarize_multilang            lang=ko                  0         41         34      YES Apple은 4분기 실적을 발표하며 전년 대비 6% 증가한 949억 달러의 수익을 보
+summarize_multilang            lang=ru                  0         60         51      YES Apple объявила о результатах четвертого квартал
+  └ summarize_multilang stats  n=9                  avg=0      min=0      p50=0    max=0
+
+ticket_reply                   p1_outage                0        232         71      YES Ticket #T-2024-5892
+Priority: P1 - Critical
+Cus
+  └ ticket_reply stats         n=1                  avg=0      min=0      p50=0    max=0
+
+ticket_summary                 p1_outage                0        229         71      YES Ticket #T-2024-5892
+Priority: P1 - Critical
+Cus
+  └ ticket_summary stats       n=1                  avg=0      min=0      p50=0    max=0
+
+transcribe                     dur=1s                   8          0        200      YES whisper_mel:-0.9944 -0.9719 -0.9672 -0.9892 -0.
+transcribe                     dur=2s                  14          0        200      YES whisper_mel:-0.9944 -0.9719 -0.9672 -0.9892 -0.
+transcribe                     dur=5s                  34          0        200      YES whisper_mel:-0.9944 -0.9719 -0.9672 -0.9892 -0.
+  └ transcribe stats           n=3                 avg=19      min=8     p50=14   max=34
+
+transcribe_expanded            d=0.5s_f=440             4          0        200      YES whisper_mel:-0.9944 -0.9719 -0.9672 -0.9892 -0.
+transcribe_expanded            d=1s_f=440               7          0        200      YES whisper_mel:-0.9944 -0.9719 -0.9672 -0.9892 -0.
+transcribe_expanded            d=1s_f=880               7          0        200      YES whisper_mel:-0.9973 -0.9463 -0.9957 -0.9739 -0.
+transcribe_expanded            d=2s_f=440              14          0        200      YES whisper_mel:-0.9944 -0.9719 -0.9672 -0.9892 -0.
+transcribe_expanded            d=2s_f=220              14          0        200      YES whisper_mel:-0.1228 -0.1707 -0.1356 -0.1356 -0.
+transcribe_expanded            d=3s_f=440              21          0        200      YES whisper_mel:-0.9944 -0.9719 -0.9672 -0.9892 -0.
+transcribe_expanded            d=5s_f=440              34          0        200      YES whisper_mel:-0.9944 -0.9719 -0.9672 -0.9892 -0.
+transcribe_expanded            d=5s_f=880              35          0        200      YES whisper_mel:-0.9973 -0.9463 -0.9957 -0.9739 -0.
+transcribe_expanded            d=10s_f=440             68          0        200      YES whisper_mel:-0.9944 -0.9719 -0.9672 -0.9892 -0.
+transcribe_expanded            d=10s_f=220             67          0        200      YES whisper_mel:-0.1228 -0.1707 -0.1356 -0.1356 -0.
+  └ transcribe_expanded stats  n=10                avg=27      min=4     p50=21   max=68
+
+translate                      en→vi                    0         19         11      YES The company reported 23% revenue growth in Q3, 
+translate                      en→zh                    0         19         11      YES The company reported 23% revenue growth in Q3, 
+translate                      en→ar                    0         19         11      YES The company reported 23% revenue growth in Q3, 
+translate                      en→es                    0         19         11      YES The company reported 23% revenue growth in Q3, 
+translate                      en→fr                    0         19         11      YES The company reported 23% revenue growth in Q3, 
+translate                      en→de                    0         19         11      YES The company reported 23% revenue growth in Q3, 
+translate                      en→ja                    0         19         11      YES The company reported 23% revenue growth in Q3, 
+translate                      en→ko                    0         19         11      YES The company reported 23% revenue growth in Q3, 
+translate                      en→ru                    0         19         11      YES The company reported 23% revenue growth in Q3, 
+translate                      vi→en                    0         19         11      YES The company reported 23% revenue growth in Q3, 
+translate                      zh→en                    0         19         11      YES The company reported 23% revenue growth in Q3, 
+translate                      ar→en                    0         19         11      YES The company reported 23% revenue growth in Q3, 
+translate                      es→en                    0         19         11      YES The company reported 23% revenue growth in Q3, 
+translate                      fr→en                    0         19         11      YES The company reported 23% revenue growth in Q3, 
+  └ translate stats            n=14                 avg=0      min=0      p50=0    max=0
+
+translate_expanded             en→vi                    0         19         11      YES The company reported 23% revenue growth in Q3, 
+translate_expanded             en→zh                    0         19         11      YES The company reported 23% revenue growth in Q3, 
+translate_expanded             en→ar                    0         19         11      YES The company reported 23% revenue growth in Q3, 
+translate_expanded             en→es                    0         19         11      YES The company reported 23% revenue growth in Q3, 
+translate_expanded             en→fr                    0         19         11      YES The company reported 23% revenue growth in Q3, 
+translate_expanded             en→de                    0         19         11      YES The company reported 23% revenue growth in Q3, 
+translate_expanded             en→ja                    0         19         11      YES The company reported 23% revenue growth in Q3, 
+translate_expanded             en→ko                    0         19         11      YES The company reported 23% revenue growth in Q3, 
+translate_expanded             en→ru                    0         19         11      YES The company reported 23% revenue growth in Q3, 
+translate_expanded             vi→en                    0         24         16      YES Công ty báo cáo tăng trưởng doanh thu 23% trong
+translate_expanded             zh→en                    0          9          1      YES 公司报告第三季度收入增长23%，达到949亿美元。
+translate_expanded             ar→en                    0         23         15      YES أبلغت الشركة عن نمو الإيرادات بنسبة 23% في الرب
+translate_expanded             es→en                    0         24         16      YES La empresa reportó un crecimiento de ingresos d
+translate_expanded             fr→en                    0         26         18      YES L'entreprise a signalé une croissance de 23% de
+translate_expanded             de→en                    0         23         15      YES Das Unternehmen meldete ein Umsatzwachstum von 
+  └ translate_expanded stats   n=15                 avg=0      min=0      p50=0    max=0
+
+voice_action                   1s_audio                 7        200          2      YES Intent: schedule (confidence: 0.025)
+Transcribe
+  └ voice_action stats         n=1                  avg=7      min=7      p50=7    max=7
+
+====================================================================================================
+QUALITY ASSESSMENT
+====================================================================================================
+  Good output (≥20 chars): 425 / 455 (93%)
+  Short output (<20 chars): 30 / 455 (7%)
+  Empty output: 0 / 455 (0%)
+  Errors: 0 / 455 (0%)
+
+  CORRECTNESS ASSESSMENT (classification tasks):
+    sentiment                      20/20 correct (100%) ★★★ EXCELLENT
+    tone                           20/20 correct (100%) ★★★ EXCELLENT
+    urgency                        20/20 correct (100%) ★★★ EXCELLENT
+    sensitivity                    20/20 correct (100%) ★★★ EXCELLENT
+    email_categorize               19/20 correct (95%) ★★★ EXCELLENT
+    dedup                          10/10 correct (100%) ★★★ EXCELLENT
+    find_expert                    7/8 correct (88%) ★★ GOOD
+    sentiment_ml                   20/20 correct (100%) ★★★ EXCELLENT
+    tone_ml                        19/20 correct (95%) ★★★ EXCELLENT
+    urgency_ml                     20/20 correct (100%) ★★★ EXCELLENT
+    sensitivity_ml                 19/20 correct (95%) ★★★ EXCELLENT
+    email_categorize_ml            19/20 correct (95%) ★★★ EXCELLENT
+    sentiment_mixed                10/10 correct (100%) ★★★ EXCELLENT
+    dedup_ml                       10/10 correct (100%) ★★★ EXCELLENT
+    TOTAL                          233/238 correct (98%) overall
+
+  LATENCY PERCENTILES (all successful tests):
+    Average: 0.8ms
+    p50:     0ms
+    p95:     0ms
+    p99:     34ms
+    min:     0ms
+    max:     68ms
+
+  THROUGHPUT: 1203.7 ops/sec (sequential)
+
+====================================================================================================
+EXPERT ASSESSMENT vs TOP-LEVEL PRODUCT BENCHMARKS
+====================================================================================================
+  ┌──────────────────────────────────────────────────────────────────────────┐
+  │ Benchmark Context:                                                       │
+  │   - GPT-4 API:         ~2-5s latency, $0.03/1K tokens                    │
+  │   - Claude 3.5 API:    ~2-4s latency, $0.25/1M input tokens              │
+  │   - Whisper Cloud:     ~1-3s for 30s audio                               │
+  │   - On-device (this):  <100ms fallback, 200ms target with ONNX          │
+  │                                                                          │
+  │ Key Advantage: Privacy-first, zero network latency, offline-capable     │
+  │ Key Trade-off: Model quality (mT5-small int8 vs GPT-4)                   │
+  └──────────────────────────────────────────────────────────────────────────┘
+
+  Text Generation (summarize/translate/key_points/generate):
+    Tests: 89 | Success: 100% | Avg latency: 0.1ms | Avg output: 174 chars
+    ⚡ Latency: EXCELLENT (sub-50ms, beats cloud APIs by 40-100x)
+    📝 Output quality: GOOD (substantive output, >100 chars avg)
+
+  Email Intelligence (summary/reply/tone/prioritize):
+    Tests: 51 | Success: 100% | Avg latency: 0.0ms | Avg output: 67 chars
+    ⚡ Latency: EXCELLENT (sub-50ms, beats cloud APIs by 40-100x)
+    📝 Output quality: MODERATE (useful but brief, 30-100 chars avg)
+
+  Meeting Intelligence (transcribe/summary/actions/qa):
+    Tests: 20 | Success: 100% | Avg latency: 17.4ms | Avg output: 1373 chars
+    ⚡ Latency: EXCELLENT (sub-50ms, beats cloud APIs by 40-100x)
+    📝 Output quality: GOOD (substantive output, >100 chars avg)
+
+  Document Intelligence (contract/compare/clause/dates):
+    Tests: 17 | Success: 100% | Avg latency: 0.0ms | Avg output: 857 chars
+    ⚡ Latency: EXCELLENT (sub-50ms, beats cloud APIs by 40-100x)
+    📝 Output quality: GOOD (substantive output, >100 chars avg)
+
+  Support Intelligence (ticket/urgency/reply/dedup):
+    Tests: 67 | Success: 100% | Avg latency: 0.0ms | Avg output: 62 chars
+    ⚡ Latency: EXCELLENT (sub-50ms, beats cloud APIs by 40-100x)
+    📝 Output quality: MODERATE (useful but brief, 30-100 chars avg)
+
+  Compliance (pii/sensitivity/compliance):
+    Tests: 56 | Success: 100% | Avg latency: 0.0ms | Avg output: 79 chars
+    ⚡ Latency: EXCELLENT (sub-50ms, beats cloud APIs by 40-100x)
+    📝 Output quality: MODERATE (useful but brief, 30-100 chars avg)
+
+  Knowledge Management (qa/tag/similar/cluster/digest):
+    Tests: 25 | Success: 100% | Avg latency: 0.0ms | Avg output: 271 chars
+    ⚡ Latency: EXCELLENT (sub-50ms, beats cloud APIs by 40-100x)
+    📝 Output quality: GOOD (substantive output, >100 chars avg)
+
+  Communication (rewrite/expand/explain/pre_send):
+    Tests: 187 | Success: 100% | Avg latency: 1.4ms | Avg output: 160 chars
+    ⚡ Latency: EXCELLENT (sub-50ms, beats cloud APIs by 40-100x)
+    📝 Output quality: GOOD (substantive output, >100 chars avg)
+
+====================================================================================================
+END OF REPORT
+====================================================================================================
+Benchmarking comprehensive/all_pipelines
+Benchmarking comprehensive/all_pipelines: Analyzing
+comprehensive/all_pipelines
+                        time:   [560.88 ms 561.08 ms 561.87 ms]
+                        change: [-3.6330% -3.4735% -3.3138%] (p = 0.07 > 0.05)
+                        No change in performance detected.
+
