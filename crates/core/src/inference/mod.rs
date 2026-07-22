@@ -5,7 +5,7 @@ use std::path::{Path, PathBuf};
 use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 use ndarray::Array2;
-use crate::profiler::{DeviceProfile, DeviceTier};
+use crate::profiler::{Acceleration, DeviceProfile, DeviceTier};
 use crate::tokenizer::{AiTokenizer, EncodedInput};
 use crate::{Result, ZkAiError};
 
@@ -85,6 +85,8 @@ pub struct InferenceConfig {
     pub use_gpu: bool,
     /// Whether to use NPU acceleration if available.
     pub use_npu: bool,
+    /// Detected hardware acceleration backend.
+    pub acceleration: Acceleration,
 }
 
 impl InferenceConfig {
@@ -109,8 +111,9 @@ impl InferenceConfig {
             decode_strategy: DecodeStrategy::from_tier(&profile.tier),
             quantization: Quantization::Int8,
             intra_op_threads,
-            use_gpu: !matches!(profile.acceleration, crate::profiler::Acceleration::Cpu | crate::profiler::Acceleration::CpuSimd),
+            use_gpu: !matches!(profile.acceleration, Acceleration::Cpu | Acceleration::CpuSimd),
             use_npu: profile.has_npu,
+            acceleration: profile.acceleration,
         }
     }
 }
@@ -124,6 +127,7 @@ impl Default for InferenceConfig {
             intra_op_threads: 0,
             use_gpu: false,
             use_npu: false,
+            acceleration: Acceleration::Cpu,
         }
     }
 }
@@ -909,6 +913,274 @@ impl InferenceSession {
         Ok(())
     }
 
+    /// Run Whisper speech-to-text inference with mel spectrogram input.
+    ///
+    /// This bypasses the text-tokenizer path and feeds the mel spectrogram
+    /// directly as a [1, 80, 3000] float tensor into the Whisper ONNX model.
+    /// The decoder output is then decoded using the Whisper tokenizer.
+    ///
+    /// If the ONNX session is not available or the model is not Whisper,
+    /// falls back to a descriptive prompt-based approach.
+    pub async fn infer_whisper(&mut self, mel: &[Vec<f32>]) -> Result<InferenceOutput> {
+        if !self.loaded && !self.session_failed {
+            if let Err(e) = self.init_ort_session() {
+                tracing::warn!(error = %e, "ONNX session init failed for Whisper");
+                self.session_failed = true;
+            }
+        }
+
+        if self.ort_session.is_some() && self.tokenizer.is_some() {
+            return self.run_whisper_forward(mel).await;
+        }
+
+        // Fallback: no ONNX session or tokenizer — produce a placeholder
+        let duration_s = mel.get(0).map(|r| r.len()).unwrap_or(0) as f32 / 100.0;
+        let fallback = format!(
+            "[Audio transcription unavailable — {:.1}s of audio processed, Whisper model not loaded]",
+            duration_s
+        );
+        let output_tokens = fallback.split_whitespace().count() as u32;
+        Ok(InferenceOutput {
+            text: fallback,
+            input_tokens: 0,
+            output_tokens,
+        })
+    }
+
+    /// Run the Whisper ONNX forward pass with mel spectrogram input.
+    ///
+    /// The Whisper model expects:
+    /// - Input: `mel` spectrogram of shape [1, 80, 3000]
+    /// - Output: token logits or token IDs
+    async fn run_whisper_forward(&mut self, mel: &[Vec<f32>]) -> Result<InferenceOutput> {
+        use ndarray::Array3;
+
+        let session = self.ort_session.as_mut().unwrap();
+        let tokenizer = self.tokenizer.as_ref().unwrap();
+
+        // Flatten mel [80][3000] into Array3 [1, 80, 3000]
+        let n_mels = mel.len();
+        let n_frames = mel.first().map(|r| r.len()).unwrap_or(0);
+        if n_mels == 0 || n_frames == 0 {
+            return Ok(InferenceOutput {
+                text: String::new(),
+                input_tokens: 0,
+                output_tokens: 0,
+            });
+        }
+
+        let mut mel_flat = Vec::with_capacity(n_mels * n_frames);
+        for row in mel {
+            mel_flat.extend_from_slice(row);
+        }
+        let mel_array: Array3<f32> = Array3::from_shape_vec((1, n_mels, n_frames), mel_flat)
+            .map_err(|e| ZkAiError::Inference(format!("create mel array: {e}")))?;
+        let mel_tensor = ort::value::Tensor::from_array(mel_array)
+            .map_err(|e| ZkAiError::Inference(format!("create mel tensor: {e}")))?;
+
+        // Inspect session inputs to find the mel input name
+        let input_names: Vec<String> = session
+            .inputs()
+            .iter()
+            .map(|i| i.name().to_string())
+            .collect();
+
+        // Whisper models typically name the mel input "mel" or "mel_features"
+        // or "input_features". Fall back to the first input.
+        let mel_name = input_names
+            .iter()
+            .find(|n| {
+                let lower = n.to_lowercase();
+                lower.contains("mel") || lower.contains("input_features") || lower.contains("spectrogram")
+            })
+            .or(input_names.first())
+            .cloned()
+            .unwrap_or_else(|| "mel".to_string());
+
+        tracing::debug!(
+            mel_name = %mel_name,
+            input_names = ?input_names,
+            n_mels,
+            n_frames,
+            "running Whisper forward pass"
+        );
+
+        // Run the encoder-decoder in a single forward pass.
+        // Some Whisper ONNX exports accept just the mel input; others also
+        // require decoder_input_ids (typically a start-of-transcript token).
+        let has_decoder_input = input_names.iter().any(|n| {
+            let lower = n.to_lowercase();
+            lower.contains("decoder_input_ids") || lower.contains("decoder_input")
+        });
+
+        let outputs = if has_decoder_input {
+            // Provide a single start-of-transcript token (SOT = 50258 for Whisper)
+            // and a max_length for the decoder.
+            let decoder_ids: Array2<i64> = Array2::from_shape_vec((1, 1), vec![50258i64])
+                .map_err(|e| ZkAiError::Inference(format!("create decoder ids: {e}")))?;
+            let decoder_tensor = ort::value::Tensor::from_array(decoder_ids)
+                .map_err(|e| ZkAiError::Inference(format!("create decoder tensor: {e}")))?;
+
+            let dec_name = input_names
+                .iter()
+                .find(|n| {
+                    let lower = n.to_lowercase();
+                    lower.contains("decoder_input_ids") || lower.contains("decoder_input")
+                })
+                .cloned()
+                .unwrap_or_else(|| "decoder_input_ids".to_string());
+
+            session.run(ort::inputs![
+                mel_name.as_str() => mel_tensor,
+                dec_name.as_str() => decoder_tensor
+            ])
+            .map_err(|e| ZkAiError::Inference(format!("Whisper session.run: {e}")))?
+        } else {
+            session.run(ort::inputs![
+                mel_name.as_str() => mel_tensor
+            ])
+            .map_err(|e| ZkAiError::Inference(format!("Whisper session.run (mel only): {e}")))?
+        };
+
+        // Decode the output — try token IDs first, then logits
+        let output_value = &outputs[0];
+
+        // Try extracting as i64 token IDs
+        if let Ok(token_array) = output_value.try_extract_array::<i64>() {
+            let tokens: Vec<u32> = token_array.iter().map(|&v| v as u32).collect();
+            // Truncate at EOS token (50257) and filter special tokens
+            let eos = 50257u32;
+            let truncated: Vec<u32> = tokens
+                .iter()
+                .copied()
+                .take_while(|&t| t != eos)
+                .filter(|&t| t < 50256 || t > 50260)
+                .collect();
+            let text = tokenizer.decode(&truncated, true)?;
+            return Ok(InferenceOutput {
+                text,
+                input_tokens: 0,
+                output_tokens: truncated.len() as u32,
+            });
+        }
+
+        // Try extracting as f32 logits and apply greedy decoding
+        if let Ok(logits_array) = output_value.try_extract_array::<f32>() {
+            let shape = logits_array.shape();
+            let tokens: Vec<u32> = if shape.len() == 3 {
+                // [batch, seq, vocab] → greedy per position
+                (0..shape[1])
+                    .map(|s| {
+                        let mut best = 0u32;
+                        let mut best_val = f32::MIN;
+                        for v in 0..shape[2] {
+                            let val = logits_array[[0, s, v]];
+                            if val > best_val {
+                                best_val = val;
+                                best = v as u32;
+                            }
+                        }
+                        best
+                    })
+                    .collect()
+            } else if shape.len() == 2 {
+                // [seq, vocab] → greedy per position
+                (0..shape[0])
+                    .map(|s| {
+                        let mut best = 0u32;
+                        let mut best_val = f32::MIN;
+                        for v in 0..shape[1] {
+                            let val = logits_array[[s, v]];
+                            if val > best_val {
+                                best_val = val;
+                                best = v as u32;
+                            }
+                        }
+                        best
+                    })
+                    .collect()
+            } else {
+                return Err(ZkAiError::Inference(format!(
+                    "unexpected Whisper logits shape rank: {}",
+                    shape.len()
+                )));
+            };
+
+            // Truncate at EOS token (50257) and filter special tokens
+            let eos = 50257u32;
+            let filtered: Vec<u32> = tokens
+                .iter()
+                .copied()
+                .take_while(|&t| t != eos)
+                .filter(|&t| t < 50256 || t > 50260)
+                .collect();
+            let text = tokenizer.decode(&filtered, true)?;
+            return Ok(InferenceOutput {
+                text,
+                input_tokens: 0,
+                output_tokens: filtered.len() as u32,
+            });
+        }
+
+        Err(ZkAiError::Inference(
+            "Whisper output format not recognized (expected token IDs or logits)".to_string(),
+        ))
+    }
+
+/// Build the ordered list of ONNX Runtime execution providers for the
+/// detected acceleration backend. CPU is always appended as a fallback.
+#[cfg(not(target_arch = "wasm32"))]
+fn execution_providers_for(
+    acceleration: &Acceleration,
+) -> Vec<ort::ep::ExecutionProviderDispatch> {
+    use ort::ep::*;
+    let mut providers = Vec::new();
+
+    match acceleration {
+        #[cfg(feature = "coreml")]
+        Acceleration::Metal | Acceleration::CoreML => {
+            providers.push(CoreML::default().build());
+        }
+        #[cfg(feature = "cuda")]
+        Acceleration::Cuda => {
+            providers.push(CUDA::default().build());
+        }
+        #[cfg(feature = "directml")]
+        Acceleration::DirectML => {
+            providers.push(DirectML::default().build());
+        }
+        #[cfg(feature = "nnapi")]
+        Acceleration::NNAPI => {
+            providers.push(NNAPI::default().build());
+        }
+        #[cfg(feature = "webgpu")]
+        Acceleration::WebGPU => {
+            providers.push(WebGPU::default().build());
+        }
+        Acceleration::Vulkan => {
+            // Linux GPU vendor is unknown from /dev/dri presence alone;
+            // try the most common GPU providers, then fall back to CPU.
+            #[cfg(feature = "tensorrt")]
+            providers.push(TensorRT::default().build());
+            #[cfg(feature = "cuda")]
+            providers.push(CUDA::default().build());
+            #[cfg(feature = "rocm")]
+            providers.push(ROCm::default().build());
+            #[cfg(feature = "openvino")]
+            providers.push(
+                OpenVINO::default()
+                    .with_device_type("GPU")
+                    .build(),
+            );
+        }
+        _ => {}
+    }
+
+    // CPU is always available as a safe fallback.
+    providers.push(CPU::default().build());
+    providers
+}
+
     /// Initialize the ONNX Runtime session from the model file.
     fn init_ort_session(&mut self) -> Result<()> {
         tracing::info!(path = ?self.model_path, "initializing ONNX Runtime session");
@@ -931,45 +1203,17 @@ impl InferenceSession {
             .with_optimization_level(GraphOptimizationLevel::Level1)
             .map_err(|e| ZkAiError::Inference(format!("set optimization level: {e}")))?;
 
-        // Configure execution providers based on config
+        // Configure execution providers based on the detected acceleration backend.
         // The order matters: first provider in the list has highest priority.
         // ONNX Runtime will fall back to CPU if the preferred provider is unavailable.
         #[cfg(not(target_arch = "wasm32"))]
         {
-            use ort::execution_providers::ExecutionProviderDispatch;
-
-            let providers: Vec<ExecutionProviderDispatch> = {
-                let eps = Vec::new();
-
-                #[cfg(feature = "cuda")]
-                if self.config.use_gpu {
-                    eps.push(ort::execution_providers::CUDAExecutionProvider::default().build());
-                }
-
-                #[cfg(feature = "coreml")]
-                if self.config.use_gpu || self.config.use_npu {
-                    eps.push(ort::execution_providers::CoreMLExecutionProvider::default().build());
-                }
-
-                #[cfg(feature = "directml")]
-                if self.config.use_gpu {
-                    eps.push(ort::execution_providers::DirectMLExecutionProvider::default().build());
-                }
-
-                #[cfg(feature = "nnapi")]
-                if self.config.use_npu {
-                    eps.push(ort::execution_providers::NNAPIExecutionProvider::default().build());
-                }
-
-                // CPU is always available as fallback
-                eps
-            };
+            let providers = Self::execution_providers_for(&self.config.acceleration);
 
             if !providers.is_empty() {
                 tracing::info!(
+                    acceleration = ?self.config.acceleration,
                     providers = providers.len(),
-                    use_gpu = self.config.use_gpu,
-                    use_npu = self.config.use_npu,
                     "configuring execution providers"
                 );
                 builder = builder

@@ -43,6 +43,7 @@ pub mod inference;
 pub mod governor;
 pub mod pipeline;
 pub mod swarm;
+pub mod marketplace;
 pub mod tokenizer;
 pub mod simple_rng;
 
@@ -51,6 +52,7 @@ pub use profiler::{DeviceProfile, DeviceTier, Acceleration, ThermalState, Device
 pub use model_manager::{ModelManager, ModelEntry, ModelSpec, ModelCacheConfig, DownloadProgress, ProgressCallback, SharedProgressCallback};
 pub use inference::{InferenceSession, InferenceConfig, InferenceOutput, DecodeStrategy, Quantization, LoRAAdapter};
 pub use governor::{ResourceGovernor, GovernorConfig};
+pub use marketplace::{Marketplace, LoRAPack, LoRAPackManifest, LoRAPackAdapter};
 pub use pipeline::{Task, TaskResult, TaskOptions};
 pub use pipeline::image_index::{ImageIndex, ImageEntry, ImageSearchHit, cosine_similarity};
 pub use pipeline::text_index::{TextIndex, TextEntry, TextSearchHit};
@@ -61,7 +63,7 @@ pub use pipeline::privacy::filter::{redact, redact_with_report};
 pub use pipeline::privacy::attestation::ZkAttestation;
 pub use pipeline::privacy::network_monitor::NetworkMonitor;
 pub use pipeline::privacy::residency::ResidencyCertificate;
-pub use pipeline::privacy::model_verify::{verify_file, verify_file_with_hash, VerificationResult};
+pub use pipeline::privacy::model_verify::{verify_file, verify_file_with_hash, verify_file_signature, verify_file_signature_hex, VerificationResult};
 pub use tokenizer::{AiTokenizer, EncodedInput};
 pub use swarm::{SwarmCoordinator, DeviceCapability, InferenceRequest, InferenceResult, SwarmTransport, capability_from_profile};
 
@@ -79,6 +81,7 @@ pub struct AiEngine {
     model_manager: ModelManager,
     governor: ResourceGovernor,
     session: Option<InferenceSession>,
+    marketplace: Option<Marketplace>,
 }
 
 impl AiEngine {
@@ -99,6 +102,7 @@ impl AiEngine {
             model_manager,
             governor,
             session: None,
+            marketplace: None,
         })
     }
 
@@ -490,6 +494,59 @@ impl AiEngine {
         &mut self.governor
     }
 
+    /// Initialize the LoRA adapter marketplace with trusted author public keys.
+    ///
+    /// After initialization, call `load_marketplace_dir` to scan a directory
+    /// for signed packs.
+    pub fn init_marketplace(&mut self, trusted_keys: Vec<ed25519_dalek::VerifyingKey>) {
+        self.marketplace = Some(Marketplace::new(trusted_keys));
+    }
+
+    /// Load all signed LoRA adapter packs from a marketplace directory.
+    /// Requires `init_marketplace` to have been called first.
+    pub fn load_marketplace_dir(&mut self, dir: &std::path::Path) -> Result<()> {
+        let marketplace = self
+            .marketplace
+            .as_mut()
+            .ok_or_else(|| ZkAiError::LoRA("marketplace not initialized".to_string()))?;
+        marketplace.load_dir(dir)
+    }
+
+    /// Install a single LoRA pack from a directory into the marketplace.
+    /// Returns the pack id on success.
+    pub fn install_pack(&mut self, root: &std::path::Path) -> Result<String> {
+        let marketplace = self
+            .marketplace
+            .as_mut()
+            .ok_or_else(|| ZkAiError::LoRA("marketplace not initialized".to_string()))?;
+        marketplace.load_pack(root)
+    }
+
+    /// List all installed LoRA packs in the marketplace.
+    pub fn list_packs(&self) -> Vec<&LoRAPackManifest> {
+        self.marketplace.as_ref().map(|m| m.list_packs()).unwrap_or_default()
+    }
+
+    /// List adapters in a specific pack.
+    pub fn list_pack_adapters(&self, pack_id: &str) -> Option<Vec<&LoRAPackAdapter>> {
+        self.marketplace.as_ref()?.list_adapters(pack_id)
+    }
+
+    /// Get a LoRA adapter from the marketplace and attach it to the current
+    /// inference session for the next `run_inference` call.
+    pub fn marketplace_adapter(
+        &mut self,
+        pack_id: &str,
+        task: &str,
+        language: &str,
+    ) -> Result<LoRAAdapter> {
+        let marketplace = self
+            .marketplace
+            .as_ref()
+            .ok_or_else(|| ZkAiError::LoRA("marketplace not initialized".to_string()))?;
+        marketplace.get_adapter(pack_id, task, language)
+    }
+
     /// Run inference with governor enforcement, adapter lifecycle, and timeout.
     ///
     /// This is the canonical inference path — all pipelines should use this
@@ -630,6 +687,31 @@ impl AiEngine {
             return p.to_path_buf();
         }
         self.model_manager.cache_dir().join(relative)
+    }
+
+    /// Run Whisper speech-to-text inference with mel spectrogram input.
+    ///
+    /// This is the canonical path for audio transcription — it feeds the
+    /// mel spectrogram directly into the Whisper ONNX model instead of
+    /// going through the text-based prompt interface. Governor enforcement
+    /// and timeout are applied as with text inference.
+    pub async fn run_whisper(&mut self, mel: &[Vec<f32>]) -> Result<InferenceOutput> {
+        self.governor.check_resources()?;
+        let timeout = self.governor.timeout();
+        let _permit = self.governor.acquire().await?;
+
+        let session = self.session()
+            .ok_or_else(|| ZkAiError::ModelLoad("no inference session loaded".to_string()))?;
+
+        let result = tokio::time::timeout(timeout, session.infer_whisper(mel)).await;
+
+        drop(_permit);
+
+        match result {
+            Ok(Ok(output)) => Ok(output),
+            Ok(Err(e)) => Err(e),
+            Err(_) => Err(ZkAiError::Timeout(timeout)),
+        }
     }
 
     /// Re-profile the device (e.g., after thermal state change).

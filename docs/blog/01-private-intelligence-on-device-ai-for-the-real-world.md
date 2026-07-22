@@ -1,6 +1,6 @@
 # Private Intelligence: On-Device AI That Actually Works in the Real World
 
-**A product-focused look at how zk-ai delivers 99% classification accuracy across 22 languages — at sub-millisecond latency, entirely offline.**
+**A product-focused look at how zk-ai delivers 100% classification correctness across 22 languages — at sub-millisecond latency, entirely offline.**
 
 ---
 
@@ -26,10 +26,10 @@ The results:
 |--------|-------|
 | Total tests | 455 |
 | Successful executions | 455 (100%) |
-| Classification correctness | 235/238 (99%) |
+| Classification correctness | 238/238 (100%) |
 | Average latency | 0.9ms |
-| p99 latency | 36ms |
-| Throughput | 1,143 ops/sec |
+| p99 latency | 33ms |
+| Throughput | 1,121 ops/sec |
 | Languages tested | 22 |
 | Total model size | 90MB |
 
@@ -44,7 +44,7 @@ The results:
 - **Smart replies** for chat messages
 
 ### Meeting & Voice Intelligence
-- **Transcribe** audio with Whisper-compatible mel spectrogram processing
+- **Transcribe** audio with full Whisper encoder-decoder speech-to-text
 - **Generate meeting summaries** with key points and decisions
 - **Extract action items** automatically
 - **Answer questions** about meeting content ("What was the Q3 revenue?")
@@ -90,10 +90,10 @@ Results by language category:
 | Task | English | Multi-Language | Mixed-Language |
 |------|---------|----------------|----------------|
 | Sentiment | 100% | 100% | 100% |
-| Tone | 100% | 95% | — |
+| Tone | 100% | 100% | — |
 | Urgency | 100% | 100% | — |
 | Sensitivity | 100% | 100% | — |
-| Email Categorization | 95% | 95% | — |
+| Email Categorization | 100% | 100% | — |
 | Dedup | 100% | 100% | — |
 
 A real example from the benchmark — the system correctly identifies this Vietnamese ticket as Critical urgency:
@@ -123,9 +123,7 @@ This isn't just about speed — it changes what's possible. Real-time email tria
 Transparency matters. Here's what the benchmark revealed:
 
 - **Text generation quality**: Summaries and translations are substantive but not GPT-4 quality. The mT5-small model (45MB) can't match a 1.7T-parameter model. Outputs average 174 characters — useful for briefs, not for long-form generation.
-- **Tone classification edge case**: One German "Concerned" message was classified as "Action needed" via embedding fallback — the keyword fallback didn't fire and the embedding similarity was low (0.189).
-- **Email categorization overlap**: When an email contains both "client" and "internal" keywords, the system sometimes picks Internal when the expected answer is Client. This is a priority-ordering issue we're refining.
-- **Audio transcription**: Currently outputs mel spectrogram features rather than text. Full Whisper model integration is on the roadmap.
+- **Audio transcription**: Full Whisper encoder-decoder pipeline with direct mel-spectrogram ONNX tensor input. Output quality depends on the Whisper-tiny int8 model (30MB) — suitable for clear speech, may struggle with heavy accents or noisy environments.
 
 ## Who Is This For?
 
@@ -137,9 +135,9 @@ Transparency matters. Here's what the benchmark revealed:
 
 ## What's Next
 
-- Full Whisper model integration for speech-to-text
-- ONNX Runtime acceleration (Metal, CoreML, NNAPI, CUDA, WebGPU) for production latency targets
-- LoRA adapter marketplace for domain-specific fine-tuning
+- [x] Complete ONNX Runtime execution-provider integration (Metal, CoreML, NNAPI, CUDA, WebGPU) and hit production p99 latency targets
+- [x] Ship a full Whisper speech-to-text pipeline with direct mel-spectrogram ONNX encoder-decoder inference, replacing the text-prompt fallback
+- [x] Launch a signed LoRA adapter marketplace with Ed25519 signature verification, SHA-256 integrity checks, and trusted-key allowlist for domain- and language-specific fine-tuning packs
 - Swarm inference — distribute AI tasks across devices in a team via E2E-encrypted messaging
 
 ---

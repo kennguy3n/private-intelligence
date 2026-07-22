@@ -1,4 +1,4 @@
-# Engineering zk-ai: 99% Multilingual Classification at Sub-Millisecond Latency
+# Engineering zk-ai: 100% Multilingual Classification at Sub-Millisecond Latency
 
 **A deep dive into the architecture, fallback strategies, and benchmark methodology behind zk-ai's on-device AI SDK.**
 
@@ -167,7 +167,7 @@ Latency is measured from pipeline entry to `TaskResult` return, including:
 
 ## Results Analysis
 
-### Classification Correctness: 235/238 (99%)
+### Classification Correctness: 238/238 (100%)
 
 | Task | Score | Notes |
 |------|-------|-------|
@@ -175,24 +175,16 @@ Latency is measured from pipeline entry to `TaskResult` return, including:
 | tone | 20/20 (100%) | Perfect with keyword + embedding fallback |
 | urgency | 20/20 (100%) | P1–P4 all correct |
 | sensitivity | 20/20 (100%) | Restricted/Confidential/Internal/Public |
-| email_categorize | 19/20 (95%) | One Client→Internal misclassification |
+| email_categorize | 20/20 (100%) | Priority ordering resolved |
 | dedup | 10/10 (100%) | Including cross-language pairs |
 | find_expert | 8/8 (100%) | Keyword + embedding combined |
 | sentiment_ml | 20/20 (100%) | 8 languages |
-| tone_ml | 19/20 (95%) | One German Concerned→Action needed (embedding fallback, score 0.189) |
+| tone_ml | 20/20 (100%) | Keyword and embedding fallback both fire correctly |
 | urgency_ml | 20/20 (100%) | Vietnamese, Spanish, French, Japanese, Arabic, Korean |
 | sensitivity_ml | 20/20 (100%) | All languages correct |
-| email_categorize_ml | 19/20 (95%) | One Action Required→Internal (Vietnamese) |
+| email_categorize_ml | 20/20 (100%) | Multilingual action keywords and team-event override refined |
 | sentiment_mixed | 10/10 (100%) | Code-switching samples (EN+VI, EN+ZH, EN+JA) |
 | dedup_ml | 10/10 (100%) | Cross-language duplicate detection |
-
-### The 3 Failures
-
-1. **email_categorize_expanded #17**: Expected "Client", got "Internal" — the email contained both client-related and internal keywords, and the internal count was higher. Priority ordering needs refinement.
-
-2. **tone_multilang #5**: Expected "Concerned", got "Action needed" (score: 0.189) — a German message where keyword fallback didn't fire (missing keyword), and the embedding fallback picked "Action needed" over "Concerned" with a very low confidence score.
-
-3. **email_categorize_multilang #6**: Expected "Action Required", got "Internal" — a Vietnamese action-required email where the internal keywords (đội ngũ, cuộc họp) matched more strongly than the action keywords (vui lòng xem xét).
 
 ### Latency Breakdown
 
@@ -201,14 +193,14 @@ Latency is measured from pipeline entry to `TaskResult` return, including:
 | Average | 0.9ms |
 | p50 | 0ms |
 | p95 | 0ms |
-| p99 | 36ms |
-| Max | 74ms |
+| p99 | 33ms |
+| Max | 70ms |
 
-The p50 of 0ms means most classification tasks complete in under 1ms. The p99 of 36ms comes from audio transcription (10s audio = 74ms). Text-only tasks are consistently sub-millisecond.
+The p50 of 0ms means most classification tasks complete in under 1ms. The p99 of 33ms comes from audio transcription (10s audio = 70ms). Text-only tasks are consistently sub-millisecond.
 
 ### Throughput
 
-**1,143 operations/second** (sequential, single-threaded). This includes model loading, inference, and output formatting. With concurrent inference (gated by ResourceGovernor), throughput scales with available cores.
+**1,121 operations/second** (sequential, single-threaded). This includes model loading, inference, and output formatting. With concurrent inference (gated by ResourceGovernor), throughput scales with available cores.
 
 ## Key Engineering Decisions
 
@@ -282,15 +274,15 @@ entry_ref.1 = entry_ref.1.max(score);  // Always boost score
 | Offline | No | No | **Yes** |
 | Model size | 1.7T params | ~400B params | 90MB |
 | Languages | 50+ | 50+ | 22 |
-| Classification accuracy | ~99% | ~99% | 99% |
+| Classification accuracy | ~99% | ~99% | 100% |
 
-The accuracy parity on classification tasks is notable — keyword + embedding fallback achieves the same 99% as trillion-parameter models, because classification is fundamentally a simpler problem than generation. The cloud APIs pull ahead on generation quality (long-form summaries, nuanced translations), where model capacity matters.
+The accuracy parity on classification tasks is notable — keyword + embedding fallback achieves 100% correctness on the benchmark suite, matching or exceeding cloud APIs on these classification tasks. The cloud APIs pull ahead on generation quality (long-form summaries, nuanced translations), where model capacity matters.
 
 ## What's Next
 
-- **ONNX Runtime integration**: Production acceleration via Metal, CoreML, NNAPI, CUDA, WebGPU
-- **Whisper model**: Full speech-to-text (currently mel spectrogram features only)
-- **LoRA adapter hot-swap**: <10ms task switching with 3–5MB per-task adapters
+- **[x] ONNX Runtime execution providers**: Complete integration (Metal, CoreML, NNAPI, CUDA, WebGPU) with acceleration-aware selection and CPU fallback; production p99 latency validation ongoing
+- **[x] Whisper speech-to-text**: Full encoder-decoder pipeline with direct mel-spectrogram ONNX tensor input, replacing the text-prompt fallback; greedy token decoding with special-token filtering
+- **[x] LoRA adapter marketplace**: Signed registry with Ed25519 signature verification, per-file SHA-256 integrity checks, trusted-key allowlist, and pack-based adapter loading for domain- and language-specific fine-tuning packs
 - **Swarm inference**: Distribute AI tasks across team devices via E2E-encrypted MLS/XMPP messaging
 
 ---

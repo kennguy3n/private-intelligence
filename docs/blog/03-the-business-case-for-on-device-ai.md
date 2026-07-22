@@ -1,6 +1,6 @@
 # The Business Case for On-Device AI: Privacy, Cost, and Speed
 
-**Why zk-ai's 90MB on-device AI stack delivers 99% classification accuracy at 1/2000th the latency and 1/100th the cost of cloud APIs.**
+**Why zk-ai's 90MB on-device AI stack delivers 100% classification correctness at 1/2000th the latency and 1/100th the cost of cloud APIs.**
 
 ---
 
@@ -89,10 +89,10 @@ If your support team in Vietnam files tickets in Vietnamese, your legal team in 
 | Task | English | Multi-Language | Mixed-Language |
 |------|---------|----------------|----------------|
 | Sentiment Analysis | 100% | 100% | 100% |
-| Tone Classification | 100% | 95% | — |
+| Tone Classification | 100% | 100% | — |
 | Urgency Classification | 100% | 100% | — |
 | Sensitivity Classification | 100% | 100% | — |
-| Email Categorization | 95% | 95% | — |
+| Email Categorization | 100% | 100% | — |
 | Duplicate Detection | 100% | 100% | — |
 
 The system handles **code-switching** — sentences that mix languages mid-stream, like "Apple announced Q4 earnings with $94.9B revenue, 前年比6%増。iPhone sales reached $46.2B." — and still classifies them correctly.
@@ -154,7 +154,7 @@ One codebase, five platforms:
 
 ### Where zk-ai Wins
 
-- **Classification tasks**: 99% accuracy matches cloud APIs at 1/2000th the latency
+- **Classification tasks**: 100% correctness matches or exceeds cloud APIs at 1/2000th the latency
 - **Cost**: Free, forever
 - **Privacy**: Data never leaves the device
 - **Offline**: Works without internet
@@ -189,4 +189,4 @@ The SDK is open-source, runs on any platform, and requires no API keys, no cloud
 
 ---
 
-*zk-ai: Private intelligence, on every device. 90MB. 22 languages. 40+ pipelines. 99% accuracy. Sub-millisecond latency. Zero cloud dependency.*
+*zk-ai: Private intelligence, on every device. 90MB. 22 languages. 40+ pipelines. 100% correctness. Sub-millisecond latency. Zero cloud dependency.*

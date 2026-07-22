@@ -56,6 +56,9 @@ pub enum ZkAiError {
 
     #[error("backend error: {0}")]
     Backend(String),
+
+    #[error("cryptographic verification failed: {0}")]
+    Crypto(String),
 }
 
 impl From<serde_json::Error> for ZkAiError {

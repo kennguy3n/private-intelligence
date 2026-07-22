@@ -19,6 +19,10 @@ cuda = ["ort/cuda"]
 coreml = ["ort/coreml"]
 directml = ["ort/directml"]
 nnapi = ["ort/nnapi"]
+webgpu = ["ort/webgpu"]
+openvino = ["ort/openvino"]
+tensorrt = ["ort/tensorrt"]
+rocm = ["ort/rocm"]
 
 [dependencies]
 tokio = { workspace = true }
@@ -34,6 +38,7 @@ ndarray = { workspace = true }
 tokenizers = { workspace = true, features = ["onig"] }
 sha2 = { workspace = true }
 hex = { workspace = true }
+ed25519-dalek = { version = "2", default-features = false, features = ["alloc", "fast"] }
 uuid = { workspace = true }
 chrono = { workspace = true }
 getrandom = "0.2"
@@ -50,7 +55,7 @@ getrandom = { version = "0.2", features = ["js"] }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 # Native: enable ort with all native backends
-ort = { workspace = true, features = ["download-binaries", "half", "ndarray", "std", "cuda", "coreml", "directml", "nnapi"] }
+ort = { workspace = true, features = ["download-binaries", "half", "ndarray", "std", "cuda", "coreml", "directml", "nnapi", "openvino", "tensorrt", "rocm"] }
 reqwest = { workspace = true }
 
 [target.'cfg(all(unix, not(target_arch = "wasm32")))'.dependencies]

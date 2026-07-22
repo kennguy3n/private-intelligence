@@ -50,39 +50,11 @@ pub async fn run(
 
     // Compute log-mel spectrogram from raw audio
     let mel = audio::compute_log_mel_spectrogram(audio_data);
-    let mel_flat = audio::flatten_mel(&mel);
 
-    // Run Whisper inference with mel spectrogram as input.
-    // The Whisper ONNX model expects a [1, 80, 3000] float input.
-    // We pass the flattened mel as the prompt — the inference session
-    // handles the actual ONNX input tensor construction when the
-    // Whisper model graph is loaded.
-    //
-    // If the loaded model is mT5-small (not Whisper), the mel features
-    // are serialized as a descriptive prompt for fallback compatibility.
-    let model_filename = engine.session()
-        .map(|s| s.model_filename().to_string())
-        .unwrap_or_default();
-
-    let infer_output = if model_filename.contains("whisper") {
-        // Direct Whisper inference with mel spectrogram features
-        let mel_str = mel_flat.iter()
-            .take(200)  // Truncate for prompt-based interface
-            .map(|v| format!("{:.4}", v))
-            .collect::<Vec<_>>()
-            .join(" ");
-        let prompt = format!("whisper_mel:{}", mel_str);
-        engine.run_inference(&prompt, None).await?
-    } else {
-        // Fallback: mT5-small loaded instead of Whisper — use descriptive prompt
-        tracing::warn!("Whisper model not loaded, using text-based fallback");
-        let prompt = format!(
-            "Transcribe audio ({} samples, {:.1}s at 16kHz, mel features computed):",
-            audio_data.len(),
-            audio_data.len() as f32 / 16000.0,
-        );
-        engine.run_inference(&prompt, None).await?
-    };
+    // Run Whisper inference with mel spectrogram as direct ONNX input.
+    // This feeds the [1, 80, 3000] mel tensor directly into the Whisper
+    // encoder-decoder, bypassing the text-based prompt interface.
+    let infer_output = engine.run_whisper(&mel).await?;
 
     let duration_ms = start.elapsed().as_millis() as u64;
 

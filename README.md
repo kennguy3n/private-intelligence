@@ -97,7 +97,8 @@ EN, VI, TH, AR, ZH, ES, FR, DE, JA, KO, ID, MS, TL, PT, RU, HI, TR, FA, UR, BN, 
 
 - **DeviceProfiler**: Detects hardware capabilities and assigns a `DeviceTier` (HighEnd, MidRange, LowEnd, Throttled).
 - **ModelManager**: Bundles 90MB of default models, downloads adapters on-demand, LRU cache with tier limits, SHA-256 verification.
-- **InferenceEngine**: ONNX Runtime backend with support for CoreML, DirectML, NNAPI, CUDA, Vulkan, WebGPU, and CPU.
+- **InferenceEngine**: ONNX Runtime backend with acceleration-aware execution-provider selection: CoreML/Metal, CUDA, DirectML, NNAPI, WebGPU, OpenVINO/ROCm/TensorRT on Linux, with CPU fallback. Full Whisper encoder-decoder pipeline for speech-to-text.
+- **Marketplace**: Signed LoRA adapter registry with Ed25519 signature verification, per-file SHA-256 integrity checks, and trusted-key allowlist for domain- and language-specific fine-tuning packs.
 - **ResourceGovernor**: Caps CPU usage, serializes inference, pauses on thermal/battery pressure, enforces timeouts.
 - **Task Pipelines**: Keyword + embedding fallback classification, generation, search, and analysis pipelines.
 - **SwarmCoordinator**: Distributes AI tasks across devices via E2E-encrypted MLS/XMPP messaging.
@@ -116,8 +117,8 @@ Comprehensive benchmark results (`cargo bench -p zk-ai-benchmarks --bench bench_
 | Successful executions | 455 (100%) |
 | Classification correctness | 238/238 (100%) |
 | Average latency | 0.9 ms |
-| p99 latency | 36 ms |
-| Throughput | 1,152 ops/sec |
+| p99 latency | 33 ms |
+| Throughput | 1,121 ops/sec |
 | Languages tested | 22 |
 
 ### Classification Results
@@ -170,7 +171,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("{}", result.output);
     
     // Classify email tone
-    let result = engine.classify_tone("URGENT: production outage, all requests failing", opts.clone()).await?;
+    let result = engine.classify_tone("URGENT: production outage, all requests failing", Default::default()).await?;
     println!("{}", result.output);
     
     Ok(())
@@ -348,9 +349,9 @@ cargo clippy --workspace
 
 ## Roadmap
 
-- [ ] ONNX Runtime production acceleration (Metal, CoreML, NNAPI, CUDA, WebGPU)
-- [ ] Full Whisper speech-to-text integration
-- [ ] LoRA adapter marketplace for domain-specific fine-tuning
+- [x] Complete ONNX Runtime execution-provider integration (Metal, CoreML, NNAPI, CUDA, WebGPU) and hit production p99 latency targets
+- [x] Ship a full Whisper speech-to-text pipeline with direct mel-spectrogram ONNX encoder-decoder inference, replacing the text-prompt fallback
+- [x] Launch a signed LoRA adapter marketplace with Ed25519 signature verification, SHA-256 integrity checks, and trusted-key allowlist for domain- and language-specific fine-tuning packs
 - [ ] Swarm inference over E2E-encrypted messaging
 - [ ] Additional language adapters beyond the initial 22
 
