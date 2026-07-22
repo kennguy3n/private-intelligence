@@ -158,7 +158,7 @@ pub async fn run(
             || lower.contains("チームランチ")  // Japanese: team lunch
             || lower.contains("confirmen antes del jueves")  // Spanish: RSVP context
             || lower.contains("confirmer avant jeudi")  // French: RSVP context
-            || lower.contains("phản hồi trước thứ Năm");  // Vietnamese: RSVP context
+            || lower.contains("phản hồi trước thứ năm");  // Vietnamese: RSVP context
         if is_team_event_rsvp && internal_count > 0 {
             ("Internal", 0.80)
         } else {

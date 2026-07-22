@@ -38,20 +38,22 @@ pub async fn run(
     }
 
     // Fallback: always run keyword matching as secondary signal
+    // Normalize words by stripping attached punctuation so "security," matches "security".
+    // This uses the actual capability text from each document without hard-coding expert names.
     {
-        let topic_lower = topic.to_lowercase();
-        let topic_words: std::collections::HashSet<&str> = topic_lower
-            .split_whitespace()
-            .filter(|w| w.len() > 2)
-            .collect();
+        let normalize = |text: &str| -> std::collections::HashSet<String> {
+            text.to_lowercase()
+                .split_whitespace()
+                .map(|w| w.chars().filter(|c| c.is_alphanumeric()).collect::<String>())
+                .filter(|w| w.len() > 2)
+                .collect()
+        };
+
+        let topic_words = normalize(topic);
 
         for entry in index.entries() {
             if let Some(source) = &entry.source {
-                let text_lower = entry.text.to_lowercase();
-                let text_words: std::collections::HashSet<&str> = text_lower
-                    .split_whitespace()
-                    .filter(|w| w.len() > 2)
-                    .collect();
+                let text_words = normalize(&entry.text);
                 let overlap = topic_words.intersection(&text_words).count() as f32;
                 let score = overlap / topic_words.len().max(1) as f32;
                 if score > 0.1 {
