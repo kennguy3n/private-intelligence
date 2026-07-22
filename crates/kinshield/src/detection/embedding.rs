@@ -53,8 +53,10 @@ fn prototype_text(indicator: IndicatorId) -> &'static str {
 }
 
 /// Embedding similarity threshold for indicator detection.
-const SIMILARITY_THRESHOLD: f32 = 0.65;
-const SIMILARITY_HIGH_THRESHOLD: f32 = 0.78;
+/// E5 embeddings for short texts cluster in a narrow cone (0.78+ baseline),
+/// so the threshold must be high enough to only fire on genuine semantic matches.
+const SIMILARITY_THRESHOLD: f32 = 0.85;
+const SIMILARITY_HIGH_THRESHOLD: f32 = 0.90;
 
 /// Detect indicators using embedding-based semantic similarity.
 ///
@@ -67,7 +69,9 @@ pub async fn detect_embeddings(
     _channel: Channel,
     _language: &str,
 ) -> Result<Vec<IndicatorHit>, zk_ai_core::ZkAiError> {
-    let text_embedding = engine.run_embedding(text).await?;
+    // E5 models require a "query: " prefix for optimal embedding quality.
+    let prefixed_text = format!("query: {}", text);
+    let text_embedding = engine.run_embedding(&prefixed_text).await?;
     let mut hits = Vec::new();
 
     for &indicator_id in EMBEDDING_INDICATORS {
@@ -76,7 +80,8 @@ pub async fn detect_embeddings(
             continue;
         }
 
-        let proto_embedding = engine.run_embedding(prototype).await?;
+        let prefixed_proto = format!("query: {}", prototype);
+        let proto_embedding = engine.run_embedding(&prefixed_proto).await?;
         let score = cosine_similarity(&text_embedding, &proto_embedding);
 
         if score >= SIMILARITY_THRESHOLD {

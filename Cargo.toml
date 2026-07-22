@@ -13,6 +13,7 @@ members = [
     "samples/kinshield",
     "samples/kinshield-scam-demo",
     "samples/kinsense",
+    "samples/kinshield-eval",
 ]
 
 # zk-ai — cross-platform on-device AI inference SDK.

@@ -229,25 +229,34 @@ impl KinShieldEngine {
 
         // 4. Embedding-based detection (requires e5-small model)
         if text.split_whitespace().count() >= 3 {
-            self.ensure_embedding_model().await?;
-            match embedding::detect_embeddings(
-                &mut self.ai_engine, text, channel, language,
-            ).await {
-                Ok(emb_hits) => {
-                    for emb_hit in emb_hits {
-                        if let Some(existing) = indicators.iter_mut().find(|h| h.id == emb_hit.id) {
-                            if emb_hit.strength.weight() > existing.strength.weight() {
-                                existing.strength = emb_hit.strength;
+            match self.ensure_embedding_model().await {
+                Ok(()) => {
+                    match embedding::detect_embeddings(
+                        &mut self.ai_engine, text, channel, language,
+                    ).await {
+                        Ok(emb_hits) => {
+                            for emb_hit in emb_hits {
+                                if let Some(existing) = indicators.iter_mut().find(|h| h.id == emb_hit.id) {
+                                    if emb_hit.strength.weight() > existing.strength.weight() {
+                                        existing.strength = emb_hit.strength;
+                                    }
+                                } else {
+                                    indicators.push(emb_hit);
+                                }
                             }
-                        } else {
-                            indicators.push(emb_hit);
+                        }
+                        Err(e) => {
+                            tracing::warn!(
+                                error = %e,
+                                "embedding detection failed, continuing with keyword-only results"
+                            );
                         }
                     }
                 }
                 Err(e) => {
                     tracing::warn!(
                         error = %e,
-                        "embedding detection failed, continuing with keyword-only results"
+                        "embedding model unavailable, continuing with keyword-only results"
                     );
                 }
             }

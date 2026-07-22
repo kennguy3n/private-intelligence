@@ -783,20 +783,25 @@ impl InferenceSession {
 
             let shape = emb_array.shape();
 
-            // Pool to a single vector:
-            // [batch, seq, dim] → mean over seq → [batch, dim] → take batch 0
+            // Pool to a single vector using attention-mask-aware mean pooling:
+            // [batch, seq, dim] → masked mean over seq → [batch, dim] → take batch 0
             // [batch, dim] → take batch 0
             // [dim] → use directly
             let embedding = if shape.len() == 3 {
                 let dim = shape[2];
                 let seq = shape[1];
+                let mask = &encoded.attention_mask;
+                let valid_len: usize = mask.iter().map(|&m| m as usize).sum();
+                let valid_len = if valid_len == 0 { seq } else { valid_len };
                 let mut pooled = vec![0.0f32; dim];
                 for d in 0..dim {
                     let mut sum = 0.0f32;
                     for s in 0..seq {
-                        sum += emb_array[[0, s, d]];
+                        if s < mask.len() && mask[s] != 0 {
+                            sum += emb_array[[0, s, d]];
+                        }
                     }
-                    pooled[d] = sum / seq as f32;
+                    pooled[d] = sum / valid_len as f32;
                 }
                 pooled
             } else if shape.len() == 2 {
