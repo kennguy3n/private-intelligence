@@ -1,0 +1,21 @@
+[package]
+name = "kinshield"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "KinShield — privacy & compliance: PII scanning, redaction, audit logs, ZK attestation, data residency"
+
+[[bin]]
+name = "kinshield"
+path = "src/main.rs"
+
+[dependencies]
+zk-ai-core = { path = "../../crates/core" }
+tokio = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+chrono = { workspace = true }

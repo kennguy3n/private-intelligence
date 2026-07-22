@@ -1,0 +1,20 @@
+[package]
+name = "kchat-b2b"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "KChat B2B — enterprise chat with on-device AI: contract analysis, ticket intel, compliance, knowledge management"
+
+[[bin]]
+name = "kchat-b2b"
+path = "src/main.rs"
+
+[dependencies]
+zk-ai-core = { path = "../../crates/core" }
+tokio = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }

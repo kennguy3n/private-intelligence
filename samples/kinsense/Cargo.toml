@@ -1,0 +1,20 @@
+[package]
+name = "kinsense"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "KinSense — semantic perception: embedding search, image search, clustering, auto-tagging, find-similar"
+
+[[bin]]
+name = "kinsense"
+path = "src/main.rs"
+
+[dependencies]
+zk-ai-core = { path = "../../crates/core" }
+tokio = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
