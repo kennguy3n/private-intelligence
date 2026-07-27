@@ -2,7 +2,6 @@
 
 Four standalone demonstrations showing how to integrate [zk-ai](../README.md) into
 different product contexts. Each sample runs independently — just `cargo run -p <name>`.
-KinShield demos are now bundled in [`crates/kinshield`](../crates/kinshield/README.md).
 
 All inference runs **on-device**. No network calls, no API keys, no per-token costs.
 
@@ -10,6 +9,7 @@ All inference runs **on-device**. No network calls, no API keys, no per-token co
 
 | Sample | Package | Description |
 |--------|---------|-------------|
+| **KinShield** | `kinshield` | On-device scam detection — semantic indicators, risk scoring, threat intel, family protection, calibration, privacy budgets |
 | **KChat B2C** | `kchat-b2c` | Consumer chat app — email summaries, smart replies, meeting summaries, notification digests, daily digests, pre-send checks |
 | **KChat B2B** | `kchat-b2b` | Enterprise chat app — contract analysis, document comparison, ticket intelligence, compliance, meeting minutes, collaboration summaries |
 | **KinSense** | `kinsense` | Family safety — activity classification, anomaly detection, SOS urgency, smart replies, daily safety digest, PII redaction, policy engine, location recognition, audit trail, ZK attestation |
@@ -20,12 +20,13 @@ All inference runs **on-device**. No network calls, no API keys, no per-token co
 # From the repository root
 
 # Run any sample individually
+cargo run -p kinshield-scam-demo
 cargo run -p kchat-b2c
 cargo run -p kchat-b2b
 cargo run -p kinsense
 
 # Build all samples
-cargo build -p kchat-b2c -p kchat-b2b -p kinsense
+cargo build -p kinshield -p kchat-b2c -p kchat-b2b -p kinsense
 ```
 
 ## Architecture
@@ -34,6 +35,10 @@ Each sample is a standalone Rust binary that depends on `zk-ai-core`:
 
 ```
 samples/
+├── kinshield/         # Scam detection demo (lib + multiple binaries)
+│   ├── Cargo.toml
+│   ├── README.md
+│   └── src/
 ├── kchat-b2c/          # Consumer chat demo
 │   ├── Cargo.toml
 │   ├── README.md

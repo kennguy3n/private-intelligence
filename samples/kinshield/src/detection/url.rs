@@ -6,6 +6,7 @@
 use std::sync::LazyLock;
 use regex_lite::Regex;
 use crate::ontology::{IndicatorHit, IndicatorStrength};
+use crate::allowlist;
 
 /// Check if a domain contains a brand name, using word-boundary matching
 /// for short brand names (≤4 chars) to avoid false positives.
@@ -413,9 +414,20 @@ fn detect_generic_phishing_domain(url: &str) -> bool {
     false
 }
 
+/// Extract the domain from a URL string.
+fn extract_domain(url: &str) -> String {
+    let lower = url.to_lowercase();
+    let domain_part = lower
+        .strip_prefix("https://")
+        .or_else(|| lower.strip_prefix("http://"))
+        .unwrap_or(&lower);
+    domain_part.split('/').next().unwrap_or(domain_part).to_string()
+}
+
 /// Analyze URLs in text for suspicious patterns.
 ///
 /// Returns an IndicatorHit if any suspicious URL patterns are found.
+/// Also returns whether all URLs are from allowlisted domains.
 pub fn analyze_urls(text: &str) -> Option<IndicatorHit> {
     let urls = extract_urls(text);
     if urls.is_empty() {
@@ -426,6 +438,13 @@ pub fn analyze_urls(text: &str) -> Option<IndicatorHit> {
 
     for url in &urls {
         let lower = url.to_lowercase();
+        let domain = extract_domain(url);
+        let domain_no_port = domain.split(':').next().unwrap_or(&domain);
+
+        // Skip allowlisted domains entirely — they are known legitimate
+        if allowlist::is_allowed_domain(domain_no_port) {
+            continue;
+        }
 
         // Check for lookalike domains (brand impersonation)
         if detect_lookalike_domain(url) {
@@ -438,12 +457,7 @@ pub fn analyze_urls(text: &str) -> Option<IndicatorHit> {
         }
 
         // Check for URL shorteners (match against domain only, not full URL path)
-        let url_domain = lower
-            .strip_prefix("https://")
-            .or_else(|| lower.strip_prefix("http://"))
-            .unwrap_or(&lower);
-        let url_domain = url_domain.split('/').next().unwrap_or(url_domain);
-        if URL_SHORTENERS.iter().any(|&s| url_domain == s || url_domain.ends_with(&format!(".{}", s))) {
+        if URL_SHORTENERS.iter().any(|&s| domain_no_port == s || domain_no_port.ends_with(&format!(".{}", s))) {
             suspicious_count += 1;
         }
 
@@ -458,12 +472,7 @@ pub fn analyze_urls(text: &str) -> Option<IndicatorHit> {
         }
 
         // Check for excessive subdomains (e.g., a.b.c.d.example.com)
-        let domain_part = lower
-            .strip_prefix("https://")
-            .or_else(|| lower.strip_prefix("http://"))
-            .unwrap_or(&lower);
-        let domain = domain_part.split('/').next().unwrap_or(domain_part);
-        let dot_count = domain.matches('.').count();
+        let dot_count = domain_no_port.matches('.').count();
         if dot_count >= 4 {
             suspicious_count += 1;
         }
@@ -498,5 +507,18 @@ pub fn analyze_urls(text: &str) -> Option<IndicatorHit> {
         id: crate::ontology::IndicatorId::LinkSuspicious,
         strength,
         match_count: suspicious_count,
+    })
+}
+
+/// Check if all URLs in the text are from allowlisted domains.
+pub fn all_urls_allowed(text: &str) -> bool {
+    let urls = extract_urls(text);
+    if urls.is_empty() {
+        return false;
+    }
+    urls.iter().all(|url| {
+        let domain = extract_domain(url);
+        let domain_no_port = domain.split(':').next().unwrap_or(&domain);
+        allowlist::is_allowed_domain(domain_no_port)
     })
 }

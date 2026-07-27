@@ -106,7 +106,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let eval_path = std::env::args()
         .nth(1)
         .unwrap_or_else(|| {
-            "crates/kinshield/data/kinshield-ota-20260709-004-data/sms/sms_eval_sets.csv"
+            "samples/kinshield/data/kinshield-ota-20260709-004-data/sms/sms_eval_sets.csv"
                 .to_string()
         });
 

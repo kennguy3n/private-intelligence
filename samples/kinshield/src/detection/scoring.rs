@@ -7,6 +7,8 @@ use crate::ontology::{IndicatorHit, IndicatorId, IndicatorStrength};
 use crate::channel::Channel;
 use crate::detection::PredictedOutcome;
 use crate::taxonomy::ScamType;
+use crate::allowlist;
+use crate::detection::url;
 
 /// Compute risk bucket (1-5) from indicator hits.
 ///
@@ -209,34 +211,140 @@ pub fn compute_risk_bucket(
         }
     }
 
-    // 4. Legitimacy signal reduction
-    // Certain phrases strongly indicate a legitimate notification rather than a scam.
-    // These should reduce the risk bucket.
+    // 4. Legitimacy signal reduction (enhanced with allowlist)
+    // Certain phrases and patterns strongly indicate a legitimate notification
+    // rather than a scam. The allowlist module provides richer detection.
     let lower = text.to_lowercase();
-    let legitimacy_hits = count_legitimacy_signals(&lower);
 
-    if legitimacy_hits > 0 {
-        // Each legitimacy signal reduces bucket by 1 (min 2 signals counted)
-        let reduction = legitimacy_hits.min(2) as u8;
+    // Check if all URLs are from allowlisted domains
+    let has_urls = lower.contains("http://") || lower.contains("https://");
+    let all_urls_ok = if has_urls {
+        url::all_urls_allowed(text)
+    } else {
+        false
+    };
+
+    let legit = allowlist::analyze_legitimacy(&lower, has_urls, all_urls_ok);
+
+    // Also count legacy legitimacy signals for backward compatibility
+    let legacy_legit_hits = count_legitimacy_signals(&lower);
+    let total_legit_signals = legit.signal_count + legacy_legit_hits;
+
+    if total_legit_signals > 0 {
+        // Stronger reduction: up to 3 levels for multiple signals
+        let reduction = total_legit_signals.min(3) as u8;
         bucket = bucket.saturating_sub(reduction).max(1);
     }
 
-    // Sender-brand mismatch: if text contains legitimate brand tags (e.g., [DBS], [OCBC])
-    // and no suspicious URLs, reduce risk — legitimate notifications often use sender tags
-    if has(IndicatorId::LinkSuspicious).is_none() {
-        let brand_tags = ["[dbs]", "[posb]", "[ocbc]", "[uob]", "[hsbc]", "[cpf]",
-            "[singpost]", "[grab]", "[shopee]", "[lazada]", "[microsoft]", "[google]",
-            "[apple]", "[netflix]", "[vietcombank]", "[techcombank]", "[bidv]",
-            "[maybank]", "[cimb]", "[bca]", "[mandiri]", "[telkomsel]", "[ais]",
-            "[singtel]", "[starhub]", "[m1]", "[mas]", "[moh]", "[mom]", "[ica]",
-            "[hdb]", "[gov.sg]", "[spf]", "[ministry",
-            "[viettel]", "[tpbank]", "[mb bank]", "[bni]", "[bri]",
-            "[bdo]", "[bpi]", "[metrobank]", "[gcash]", "[globe]", "[smart]"];
-        if brand_tags.iter().any(|t| lower.contains(t)) {
-            // Only reduce if there are no high-value indicators (credential, remote access, sextortion)
-            if !indicators.iter().any(|h| h.id.is_high_value() && h.strength == IndicatorStrength::High) {
-                bucket = bucket.saturating_sub(1).max(1);
-            }
+    // Security notification override: if this is a security notification
+    // (password change, login alert, OTP with "do not share"), cap at bucket 2
+    // unless there are high-value indicators at High strength that aren't
+    // credential_request (which is expected in security notifications).
+    // Skip caps if LinkSuspicious is present — legitimate notifications
+    // don't use lookalike/suspicious URLs.
+    let has_suspicious_url = has(IndicatorId::LinkSuspicious).is_some();
+    if !has_suspicious_url {
+    if legit.is_security_notification {
+        let has_non_credential_high = indicators.iter().any(|h| {
+            h.id.is_high_value() && h.strength == IndicatorStrength::High && h.id != IndicatorId::CredentialRequest
+        });
+        if !has_non_credential_high {
+            bucket = bucket.min(2);
+        }
+    }
+
+    // Transaction notification: cap at bucket 2 unless there are high-value
+    // indicators at High strength (credential_request, remote_access, sextortion).
+    if legit.is_transaction_notification {
+        let has_high_value = indicators.iter().any(|h| {
+            h.id.is_high_value() && h.strength == IndicatorStrength::High
+        });
+        if !has_high_value {
+            bucket = bucket.min(2);
+        }
+    }
+
+    // Refund notification from known brand: cap at bucket 3
+    // BankTransfer and RecoveryScam are expected in refund notifications, so exclude them.
+    if legit.is_refund_notification {
+        let has_blocking_high = indicators.iter().any(|h| {
+            h.id.is_high_value() && h.strength == IndicatorStrength::High
+                && h.id != IndicatorId::BankTransfer
+                && h.id != IndicatorId::RecoveryScam
+        });
+        if !has_blocking_high {
+            bucket = bucket.min(3);
+        }
+    }
+
+    // Service expiry notification: cap at bucket 3
+    if legit.is_service_notification {
+        let has_high_value = indicators.iter().any(|h| {
+            h.id.is_high_value() && h.strength == IndicatorStrength::High
+        });
+        if !has_high_value {
+            bucket = bucket.min(3);
+        }
+    }
+
+    // Legitimate job posting from known employer: cap at bucket 3
+    if legit.is_legitimate_job_posting {
+        bucket = bucket.min(3);
+    }
+
+    // Legitimate charity: cap at bucket 3 (charity appeals use urgency + financial request)
+    if legit.is_legitimate_charity {
+        let has_blocking_high = indicators.iter().any(|h| {
+            h.id.is_high_value() && h.strength == IndicatorStrength::High
+                && h.id != IndicatorId::BankTransfer
+        });
+        if !has_blocking_high {
+            bucket = bucket.min(3);
+        }
+    }
+
+    // Government notification: cap at bucket 3 (gov messages use authority claim)
+    if legit.is_government_notification {
+        let has_blocking_high = indicators.iter().any(|h| {
+            h.id.is_high_value() && h.strength == IndicatorStrength::High
+                && h.id != IndicatorId::CredentialRequest
+        });
+        if !has_blocking_high {
+            bucket = bucket.min(3);
+        }
+    }
+
+    // Bank security alert: cap at bucket 3 (security alerts use credential request + verification)
+    if legit.is_bank_security_alert {
+        let has_blocking_high = indicators.iter().any(|h| {
+            h.id.is_high_value() && h.strength == IndicatorStrength::High
+                && h.id != IndicatorId::CredentialRequest
+                && h.id != IndicatorId::BankTransfer
+                && h.id != IndicatorId::RecoveryScam
+        });
+        if !has_blocking_high {
+            bucket = bucket.min(3);
+        }
+    }
+
+    // Delivery notification: cap at bucket 3 (delivery customs uses financial request + delivery lure)
+    if legit.is_delivery_notification {
+        let has_blocking_high = indicators.iter().any(|h| {
+            h.id.is_high_value() && h.strength == IndicatorStrength::High
+                && h.id != IndicatorId::BankTransfer
+        });
+        if !has_blocking_high {
+            bucket = bucket.min(3);
+        }
+    }
+    } // end if !has_suspicious_url (pre-channel caps)
+
+    // Sender-brand tag reduction: if text contains a recognized brand tag
+    // and no suspicious URLs, reduce risk.
+    if has(IndicatorId::LinkSuspicious).is_none() && legit.has_sender_brand_tag {
+        // Only reduce if there are no high-value indicators (credential, remote access, sextortion)
+        if !indicators.iter().any(|h| h.id.is_high_value() && h.strength == IndicatorStrength::High) {
+            bucket = bucket.saturating_sub(1).max(1);
         }
     }
 
@@ -270,6 +378,89 @@ pub fn compute_risk_bucket(
             bucket = bucket.min(2);
         }
     }
+
+    // 5c. Re-apply legitimacy caps after channel boost
+    // Channel adjustment (+1 for SMS) can push legitimacy-capped messages
+    // back above the cap. Re-apply the caps here to ensure they hold.
+    // BUT: if LinkSuspicious is present, skip all caps — a legitimate
+    // notification would not use a lookalike/suspicious URL.
+    if !has_suspicious_url {
+    if legit.is_security_notification {
+        let has_non_credential_high = indicators.iter().any(|h| {
+            h.id.is_high_value() && h.strength == IndicatorStrength::High && h.id != IndicatorId::CredentialRequest
+        });
+        if !has_non_credential_high {
+            bucket = bucket.min(2);
+        }
+    }
+    if legit.is_transaction_notification {
+        let has_high_value = indicators.iter().any(|h| {
+            h.id.is_high_value() && h.strength == IndicatorStrength::High
+        });
+        if !has_high_value {
+            bucket = bucket.min(2);
+        }
+    }
+    if legit.is_refund_notification {
+        let has_blocking_high = indicators.iter().any(|h| {
+            h.id.is_high_value() && h.strength == IndicatorStrength::High
+                && h.id != IndicatorId::BankTransfer
+                && h.id != IndicatorId::RecoveryScam
+        });
+        if !has_blocking_high {
+            bucket = bucket.min(3);
+        }
+    }
+    if legit.is_service_notification {
+        let has_high_value = indicators.iter().any(|h| {
+            h.id.is_high_value() && h.strength == IndicatorStrength::High
+        });
+        if !has_high_value {
+            bucket = bucket.min(3);
+        }
+    }
+    if legit.is_legitimate_job_posting {
+        bucket = bucket.min(3);
+    }
+    if legit.is_legitimate_charity {
+        let has_blocking_high = indicators.iter().any(|h| {
+            h.id.is_high_value() && h.strength == IndicatorStrength::High
+                && h.id != IndicatorId::BankTransfer
+        });
+        if !has_blocking_high {
+            bucket = bucket.min(3);
+        }
+    }
+    if legit.is_government_notification {
+        let has_blocking_high = indicators.iter().any(|h| {
+            h.id.is_high_value() && h.strength == IndicatorStrength::High
+                && h.id != IndicatorId::CredentialRequest
+        });
+        if !has_blocking_high {
+            bucket = bucket.min(3);
+        }
+    }
+    if legit.is_bank_security_alert {
+        let has_blocking_high = indicators.iter().any(|h| {
+            h.id.is_high_value() && h.strength == IndicatorStrength::High
+                && h.id != IndicatorId::CredentialRequest
+                && h.id != IndicatorId::BankTransfer
+                && h.id != IndicatorId::RecoveryScam
+        });
+        if !has_blocking_high {
+            bucket = bucket.min(3);
+        }
+    }
+    if legit.is_delivery_notification {
+        let has_blocking_high = indicators.iter().any(|h| {
+            h.id.is_high_value() && h.strength == IndicatorStrength::High
+                && h.id != IndicatorId::BankTransfer
+        });
+        if !has_blocking_high {
+            bucket = bucket.min(3);
+        }
+    }
+    } // end if !has_suspicious_url
 
     // 6. Clamp
     bucket.clamp(1, 5)

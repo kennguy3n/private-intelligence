@@ -171,15 +171,19 @@ impl ThreatIntelFeed {
                     return false;
                 }
 
-                // Keyword match (using pre-lowercased cache)
-                let keyword_match = c.keywords_lower.iter().any(|k| {
-                    text_lower.contains(k.as_str())
-                });
+                // Keyword match (using pre-lowercased cache, with lazy fallback)
+                let keyword_match = if !c.keywords_lower.is_empty() {
+                    c.keywords_lower.iter().any(|k| text_lower.contains(k.as_str()))
+                } else {
+                    c.keywords.iter().any(|k| text_lower.contains(&k.to_lowercase()))
+                };
 
-                // URL pattern match (using pre-lowercased cache)
-                let url_match = c.url_patterns_lower.iter().any(|p| {
-                    text_lower.contains(p.as_str())
-                });
+                // URL pattern match (using pre-lowercased cache, with lazy fallback)
+                let url_match = if !c.url_patterns_lower.is_empty() {
+                    c.url_patterns_lower.iter().any(|p| text_lower.contains(p.as_str()))
+                } else {
+                    c.url_patterns.iter().any(|p| text_lower.contains(&p.to_lowercase()))
+                };
 
                 keyword_match || url_match
             })

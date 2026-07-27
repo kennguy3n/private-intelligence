@@ -28,7 +28,7 @@ name = "debug-embed"
 path = "src/bin/debug-embed.rs"
 
 [dependencies]
-zk-ai-core = { path = "../core" }
+zk-ai-core = { path = "../../crates/core" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 chrono = { workspace = true }

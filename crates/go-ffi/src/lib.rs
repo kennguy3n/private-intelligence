@@ -115,6 +115,10 @@ pub unsafe extern "C" fn zkai_summarize(
 }
 
 /// Run a translation task.
+///
+/// # Safety
+/// `text`, `source_lang`, and `target_lang` must be valid null-terminated C strings.
+/// The returned string must be freed with `zkai_free_string`.
 #[no_mangle]
 pub unsafe extern "C" fn zkai_translate(
     text: *const c_char,
@@ -143,6 +147,10 @@ pub unsafe extern "C" fn zkai_translate(
 }
 
 /// Run a key-point extraction task.
+///
+/// # Safety
+/// `text` and `language` must be valid null-terminated C strings.
+/// The returned string must be freed with `zkai_free_string`.
 #[no_mangle]
 pub unsafe extern "C" fn zkai_key_points(
     text: *const c_char,
@@ -166,6 +174,10 @@ pub unsafe extern "C" fn zkai_key_points(
 }
 
 /// Run a summarization task with streaming enabled.
+///
+/// # Safety
+/// `text` and `language` must be valid null-terminated C strings.
+/// The returned string must be freed with `zkai_free_string`.
 #[no_mangle]
 pub unsafe extern "C" fn zkai_summarize_stream(
     text: *const c_char,
@@ -190,6 +202,9 @@ pub unsafe extern "C" fn zkai_summarize_stream(
 }
 
 /// Get the device profile as JSON.
+///
+/// # Safety
+/// No input pointers required. The returned string must be freed with `zkai_free_string`.
 #[no_mangle]
 pub unsafe extern "C" fn zkai_device_profile() -> *mut c_char {
     let guard = lock_state();
@@ -200,6 +215,10 @@ pub unsafe extern "C" fn zkai_device_profile() -> *mut c_char {
 }
 
 /// Run a semantic search task.
+///
+/// # Safety
+/// `query` must be a valid null-terminated C string.
+/// The returned string must be freed with `zkai_free_string`.
 #[no_mangle]
 pub unsafe extern "C" fn zkai_semantic_search(
     query: *const c_char,

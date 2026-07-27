@@ -43,6 +43,8 @@ pub mod contribution_limits;
 pub mod privacy_budget;
 pub mod privacy_settings;
 pub mod threat_intel;
+pub mod allowlist;
+pub mod conversation;
 pub mod test_data;
 
 #[cfg(test)]
@@ -70,6 +72,8 @@ pub use contribution_limits::{ContributionLimits, ContributionUsage, Contributio
 pub use privacy_budget::{PrivacyBudget, PrivacyBudgetStatus, SystemHealth};
 pub use privacy_settings::{PrivacySettings, EventRetention};
 pub use threat_intel::{ThreatIntelFeed, ScamCampaign, CampaignStatus, ThreatIntelReport};
+pub use allowlist::{LegitimacyContext, analyze_legitimacy, is_allowed_domain, has_sender_brand_tag};
+pub use conversation::{ConversationTracker, TrustAdjustment, SenderContext, MessageRecord};
 pub use test_data::{TestCase, all_test_cases, cases_by_region, scam_cases, benign_cases};
 
 use zk_ai_core::{AiEngine, ModelSpec, AuditLog, detect_pii, PolicyEngine};
@@ -119,6 +123,8 @@ pub struct KinShieldEngine {
     privacy_budget: PrivacyBudget,
     /// Threat intelligence feed for external campaign data.
     threat_intel: ThreatIntelFeed,
+    /// Conversation context tracker for multi-message analysis.
+    conversation: ConversationTracker,
 }
 
 /// Stored detection context for feedback correlation.
@@ -161,6 +167,7 @@ impl KinShieldEngine {
             privacy_settings: PrivacySettings::new(),
             privacy_budget: PrivacyBudget::new(),
             threat_intel: ThreatIntelFeed::new(),
+            conversation: ConversationTracker::new(),
         })
     }
 
@@ -352,7 +359,33 @@ impl KinShieldEngine {
 
         // 6. Compute risk bucket
         let raw_bucket = scoring::compute_risk_bucket(&indicators, channel, text);
-        let risk_bucket = self.calibration.calibrate(raw_bucket, channel, language);
+        let mut risk_bucket = self.calibration.calibrate(raw_bucket, channel, language);
+
+        // 6b. Conversation context adjustment — adjust risk based on sender history.
+        // If a sender_id is provided, use it; otherwise skip.
+        // This is applied after calibration so it can override calibration adjustments.
+        if let Some(sender) = member_id {
+            let trust = self.conversation.trust_adjustment(sender);
+            match trust {
+                TrustAdjustment::ReduceRisk(n) => {
+                    risk_bucket = risk_bucket.saturating_sub(n).max(1);
+                    tracing::debug!(
+                        sender_trust = "high",
+                        reduction = n,
+                        "conversation context reduced risk"
+                    );
+                }
+                TrustAdjustment::BoostRisk(n) => {
+                    risk_bucket = (risk_bucket + n).min(5);
+                    tracing::debug!(
+                        sender_trust = "low",
+                        boost = n,
+                        "conversation context boosted risk"
+                    );
+                }
+                TrustAdjustment::Neutral => {}
+            }
+        }
 
         // 7. Predict outcome and scam type
         let predicted_outcome = scoring::predict_outcome(risk_bucket);
@@ -468,7 +501,20 @@ impl KinShieldEngine {
         );
         self.pending_context_order.push_back(detection_id.clone());
 
-        // 15. Family alert check — generate alert if configured
+        // 14b. Record in conversation tracker (if sender is provided)
+        // member_id is used as the sender identifier.
+        // Only the hash is stored, never the raw ID.
+        if let Some(sender) = member_id {
+            let indicator_ids: Vec<IndicatorId> =
+                top_indicators.iter().map(|h| h.id).collect();
+            self.conversation.record(
+                sender,
+                channel,
+                chrono::Utc::now().timestamp(),
+                risk_bucket,
+                indicator_ids,
+            );
+        }
         let family_alert = if let Some(ref family) = self.family {
             if let Some(mid) = member_id {
                 family.check_alert(mid, &result)
@@ -781,6 +827,7 @@ impl KinShieldEngine {
         self.contribution_limits = ContributionLimits::new();
         self.privacy_budget = PrivacyBudget::new();
         self.threat_intel = ThreatIntelFeed::new();
+        self.conversation.clear();
         tracing::info!("all local data deleted per user request");
     }
 
