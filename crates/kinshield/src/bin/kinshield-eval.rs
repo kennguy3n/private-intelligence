@@ -73,6 +73,24 @@ fn detect_language(text: &str, declared: &str) -> &'static str {
         "tài khoản", "xác nhận", "khẩn cấp", "ngân hàng", "vui lòng",
         "đăng nhập", "mật khẩu", "ảo", "khoản", "nghi ngờ", "ảnh",
         "anh ", "chị ", "em ", "và", "không", "được", "với",
+        "đầu tư", "lợi nhuận", "cam kết", "trợ cấp", "bạn",
+        "mình", "chào", "xin lỗi", "nhầm", "cơ hội", "vốn",
+        "đăng ký", "tháng", "triệu", "nghìn", "ngày",
+        "thông báo", "xác minh", "bảo mật", "từ",
+        // Unaccented variants (common in SMS)
+        "tai khoan", "xac nhan", "khan cap", "ngan hang", "vui long",
+        "dang nhap", "mat khau", "khoan", "ban ", "minh ", "chao ",
+        "dau tu", "loi nhuan", "cam ket", "tro cap",
+        "co hoi", "von", "dang ky", "thang", "trieu", "nghin",
+        "thong bao", "xac minh", "bao mat", "khong", "duoc",
+        "tuyen", "ctv", "luong", "hoa hong", "kiem tien",
+        "trung giai", "nhan thuong", "khuyen mai",
+        "chuyen khoan", "gui tien", "nap tien", "thanh toan",
+        "ho tro", "uy quyen", "chap hanh", "canh sat",
+        "tien dien", "ho gia dinh", "dong gop", "quyen gop",
+        "ung ho", "bao lu", "dong bao", "mien trung",
+        "chuc mung", "khach hang than thiet",
+        "vnd", "viet nam", "sai gon", "ha noi",
     ];
     let vi_count = vi_markers.iter().filter(|m| lower.contains(*m)).count();
     if vi_count >= 2 {
@@ -88,7 +106,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let eval_path = std::env::args()
         .nth(1)
         .unwrap_or_else(|| {
-            "samples/kinshield/kinshield-ota-20260709-004-data/sms/sms_eval_sets.csv"
+            "crates/kinshield/data/kinshield-ota-20260709-004-data/sms/sms_eval_sets.csv"
                 .to_string()
         });
 
@@ -104,6 +122,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Engine ready. Running detection...\n");
 
     let mut results: Vec<(String, String, u8, Option<&'static str>, &'static str)> = Vec::new();
+    let mut all_indicators: Vec<Vec<String>> = Vec::new();
 
     for (i, row) in rows.iter().enumerate() {
         let lang = detect_language(&row.text, &row.language);
@@ -119,6 +138,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     "safe"
                 };
                 let scam_type_str = result.scam_type.map(|t| t.as_str());
+                let inds: Vec<String> = result.indicators.iter().map(|h| format!("{:?}:{:?}", h.id, h.strength)).collect();
+                all_indicators.push(inds);
                 results.push((
                     row.expected_label.clone(),
                     predicted.to_string(),
@@ -129,6 +150,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
             Err(e) => {
                 eprintln!("ERROR on row {i}: {e}");
+                all_indicators.push(vec![]);
                 results.push((row.expected_label.clone(), "error".to_string(), 0, None, lang));
             }
         }
@@ -143,6 +165,31 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Compute metrics
     let total = results.len();
+
+    // Debug: print false positives
+    if std::env::var("DEBUG_FP").is_ok() {
+        println!("\n--- FALSE POSITIVES (safe → scam) ---\n");
+        for (i, row) in rows.iter().enumerate() {
+            let (_, pred, bucket, scam_type, lang) = &results[i];
+            if row.expected_label == "safe" && pred == "scam" {
+                let indicators_str = all_indicators[i].join(", ");
+                println!("[{i}] bucket={bucket} lang={lang} type={scam_type:?}\n  text: {}\n  indicators: {}\n", row.text.chars().take(120).collect::<String>(), indicators_str);
+            }
+        }
+    }
+
+    // Debug: print false negatives
+    if std::env::var("DEBUG_FN").is_ok() {
+        println!("\n--- FALSE NEGATIVES (scam → safe) ---\n");
+        for (i, row) in rows.iter().enumerate() {
+            let (_, pred, bucket, scam_type, lang) = &results[i];
+            if row.expected_label == "scam" && pred == "safe" {
+                let indicators_str = all_indicators[i].join(", ");
+                println!("[{i}] bucket={bucket} lang={lang} type={scam_type:?}\n  text: {}\n  indicators: {}\n", row.text.chars().take(120).collect::<String>(), indicators_str);
+            }
+        }
+    }
+
     let tp = results.iter().filter(|(exp, pred, _, _, _)| exp == "scam" && pred == "scam").count();
     let fp = results.iter().filter(|(exp, pred, _, _, _)| exp == "safe" && pred == "scam").count();
     let tn = results.iter().filter(|(exp, pred, _, _, _)| exp == "safe" && pred == "safe").count();

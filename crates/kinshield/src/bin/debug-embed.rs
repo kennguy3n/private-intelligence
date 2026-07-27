@@ -1,6 +1,4 @@
-use kinshield::{KinShieldEngine, Channel};
 use zk_ai_core::{AiEngine, ModelSpec, cosine_similarity};
-use std::io::Read;
 
 fn main() {
     let rt = tokio::runtime::Runtime::new().unwrap();
@@ -41,7 +39,7 @@ fn main() {
 
         println!("\nSimilarity scores:");
         println!("{:<8} {:<60}", "Label", "Text (first 60 chars)");
-        for (name, proto_emb) in &proto_embs {
+        for (name, _proto_emb) in &proto_embs {
             print!("{:<8} ", name);
         }
         println!();

@@ -55,7 +55,7 @@ pub use governor::{ResourceGovernor, GovernorConfig};
 pub use marketplace::{Marketplace, LoRAPack, LoRAPackManifest, LoRAPackAdapter};
 pub use pipeline::{Task, TaskResult, TaskOptions};
 pub use pipeline::image_index::{ImageIndex, ImageEntry, ImageSearchHit, cosine_similarity};
-pub use pipeline::{keyword_match, count_keyword_matches};
+pub use pipeline::{keyword_match, count_keyword_matches, normalize_sms_slang, keyword_match_fuzzy, count_keyword_matches_fuzzy};
 pub use pipeline::text_index::{TextIndex, TextEntry, TextSearchHit};
 pub use pipeline::privacy::audit_log::{AuditLog, AuditEntry};
 pub use pipeline::privacy::policy::{PolicyEngine, PolicyDecision};
@@ -588,8 +588,8 @@ impl AiEngine {
 
         let result = tokio::time::timeout(timeout, session.infer_detailed(prompt)).await;
 
-        if self.session.is_some() {
-            let _ = self.session.as_mut().unwrap().detach_adapter().await;
+        if let Some(session) = self.session.as_mut() {
+            let _ = session.detach_adapter().await;
         }
         drop(_permit);
 
@@ -635,8 +635,8 @@ impl AiEngine {
 
         // All tokens are generated before infer_stream returns, so we can
         // safely detach the adapter and release the permit now.
-        if self.session.is_some() {
-            let _ = self.session.as_mut().unwrap().detach_adapter().await;
+        if let Some(session) = self.session.as_mut() {
+            let _ = session.detach_adapter().await;
         }
         drop(_permit);
 

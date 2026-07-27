@@ -9,6 +9,7 @@
 
 use std::ffi::{CStr, CString};
 use std::os::raw::c_char;
+use std::panic::{catch_unwind, AssertUnwindSafe};
 use std::sync::{Mutex, MutexGuard};
 use zk_ai_core::{AiEngine, TaskOptions, DeviceCapability, DeviceTier};
 
@@ -35,6 +36,28 @@ fn to_c_string<T: serde::Serialize>(val: &T) -> *mut c_char {
         Ok(s) => CString::into_raw(s),
         Err(_) => std::ptr::null_mut(),
     }
+}
+
+/// Safely run a closure with the engine and runtime, always restoring them
+/// to global state even if the closure panics. Returns `None` on panic or
+/// if the engine/runtime are not initialized.
+fn with_engine<F, R>(f: F) -> Option<R>
+where
+    F: FnOnce(&mut tokio::runtime::Runtime, &mut AiEngine) -> R,
+{
+    let mut guard = lock_state();
+    let mut runtime = guard.runtime.take()?;
+    let mut engine = guard.engine.take()?;
+
+    let result = catch_unwind(AssertUnwindSafe(|| {
+        f(&mut runtime, &mut engine)
+    }));
+
+    // Always restore engine and runtime, even on panic
+    guard.engine = Some(engine);
+    guard.runtime = Some(runtime);
+
+    result.ok()
 }
 
 /// Initialize the AI engine with a cache directory.
@@ -83,26 +106,12 @@ pub unsafe extern "C" fn zkai_summarize(
         Err(_) => return std::ptr::null_mut(),
     };
 
-    let mut guard = lock_state();
-    let runtime = match guard.runtime.take() {
-        Some(rt) => rt,
-        None => return std::ptr::null_mut(),
-    };
-    let mut engine = match guard.engine.take() {
-        Some(e) => e,
-        None => {
-            guard.runtime = Some(runtime);
-            return std::ptr::null_mut();
-        }
-    };
-
-    let result = runtime.block_on(engine.summarize(text, language, TaskOptions::default()));
-    guard.engine = Some(engine);
-    guard.runtime = Some(runtime);
-    match result {
-        Ok(r) => to_c_string(&r),
-        Err(_) => std::ptr::null_mut(),
-    }
+    with_engine(|runtime, engine| {
+        runtime.block_on(engine.summarize(text, language, TaskOptions::default()))
+    })
+    .and_then(|result| result.ok())
+    .map(|r| to_c_string(&r))
+    .unwrap_or_else(std::ptr::null_mut)
 }
 
 /// Run a translation task.
@@ -125,26 +134,12 @@ pub unsafe extern "C" fn zkai_translate(
         Err(_) => return std::ptr::null_mut(),
     };
 
-    let mut guard = lock_state();
-    let runtime = match guard.runtime.take() {
-        Some(rt) => rt,
-        None => return std::ptr::null_mut(),
-    };
-    let mut engine = match guard.engine.take() {
-        Some(e) => e,
-        None => {
-            guard.runtime = Some(runtime);
-            return std::ptr::null_mut();
-        }
-    };
-
-    let result = runtime.block_on(engine.translate(text, source_lang, target_lang, TaskOptions::default()));
-    guard.engine = Some(engine);
-    guard.runtime = Some(runtime);
-    match result {
-        Ok(r) => to_c_string(&r),
-        Err(_) => std::ptr::null_mut(),
-    }
+    with_engine(|runtime, engine| {
+        runtime.block_on(engine.translate(text, source_lang, target_lang, TaskOptions::default()))
+    })
+    .and_then(|result| result.ok())
+    .map(|r| to_c_string(&r))
+    .unwrap_or_else(std::ptr::null_mut)
 }
 
 /// Run a key-point extraction task.
@@ -162,26 +157,12 @@ pub unsafe extern "C" fn zkai_key_points(
         Err(_) => return std::ptr::null_mut(),
     };
 
-    let mut guard = lock_state();
-    let runtime = match guard.runtime.take() {
-        Some(rt) => rt,
-        None => return std::ptr::null_mut(),
-    };
-    let mut engine = match guard.engine.take() {
-        Some(e) => e,
-        None => {
-            guard.runtime = Some(runtime);
-            return std::ptr::null_mut();
-        }
-    };
-
-    let result = runtime.block_on(engine.key_points(text, language, TaskOptions::default()));
-    guard.engine = Some(engine);
-    guard.runtime = Some(runtime);
-    match result {
-        Ok(r) => to_c_string(&r),
-        Err(_) => std::ptr::null_mut(),
-    }
+    with_engine(|runtime, engine| {
+        runtime.block_on(engine.key_points(text, language, TaskOptions::default()))
+    })
+    .and_then(|result| result.ok())
+    .map(|r| to_c_string(&r))
+    .unwrap_or_else(std::ptr::null_mut)
 }
 
 /// Run a summarization task with streaming enabled.
@@ -199,27 +180,13 @@ pub unsafe extern "C" fn zkai_summarize_stream(
         Err(_) => return std::ptr::null_mut(),
     };
 
-    let mut guard = lock_state();
-    let runtime = match guard.runtime.take() {
-        Some(rt) => rt,
-        None => return std::ptr::null_mut(),
-    };
-    let mut engine = match guard.engine.take() {
-        Some(e) => e,
-        None => {
-            guard.runtime = Some(runtime);
-            return std::ptr::null_mut();
-        }
-    };
-
-    let opts = TaskOptions { stream: true, ..Default::default() };
-    let result = runtime.block_on(engine.summarize(text, language, opts));
-    guard.engine = Some(engine);
-    guard.runtime = Some(runtime);
-    match result {
-        Ok(r) => to_c_string(&r),
-        Err(_) => std::ptr::null_mut(),
-    }
+    with_engine(|runtime, engine| {
+        let opts = TaskOptions { stream: true, ..Default::default() };
+        runtime.block_on(engine.summarize(text, language, opts))
+    })
+    .and_then(|result| result.ok())
+    .map(|r| to_c_string(&r))
+    .unwrap_or_else(std::ptr::null_mut)
 }
 
 /// Get the device profile as JSON.
@@ -242,26 +209,12 @@ pub unsafe extern "C" fn zkai_semantic_search(
         Err(_) => return std::ptr::null_mut(),
     };
 
-    let mut guard = lock_state();
-    let runtime = match guard.runtime.take() {
-        Some(rt) => rt,
-        None => return std::ptr::null_mut(),
-    };
-    let mut engine = match guard.engine.take() {
-        Some(e) => e,
-        None => {
-            guard.runtime = Some(runtime);
-            return std::ptr::null_mut();
-        }
-    };
-
-    let result = runtime.block_on(engine.semantic_search(query, TaskOptions::default()));
-    guard.engine = Some(engine);
-    guard.runtime = Some(runtime);
-    match result {
-        Ok(r) => to_c_string(&r),
-        Err(_) => std::ptr::null_mut(),
-    }
+    with_engine(|runtime, engine| {
+        runtime.block_on(engine.semantic_search(query, TaskOptions::default()))
+    })
+    .and_then(|result| result.ok())
+    .map(|r| to_c_string(&r))
+    .unwrap_or_else(std::ptr::null_mut)
 }
 
 /// Run a document generation task.
@@ -288,26 +241,12 @@ pub unsafe extern "C" fn zkai_generate_doc(
         Err(_) => return std::ptr::null_mut(),
     };
 
-    let mut guard = lock_state();
-    let runtime = match guard.runtime.take() {
-        Some(rt) => rt,
-        None => return std::ptr::null_mut(),
-    };
-    let mut engine = match guard.engine.take() {
-        Some(e) => e,
-        None => {
-            guard.runtime = Some(runtime);
-            return std::ptr::null_mut();
-        }
-    };
-
-    let result = runtime.block_on(engine.generate_doc(topic, outline, language, TaskOptions::default()));
-    guard.engine = Some(engine);
-    guard.runtime = Some(runtime);
-    match result {
-        Ok(r) => to_c_string(&r),
-        Err(_) => std::ptr::null_mut(),
-    }
+    with_engine(|runtime, engine| {
+        runtime.block_on(engine.generate_doc(topic, outline, language, TaskOptions::default()))
+    })
+    .and_then(|result| result.ok())
+    .map(|r| to_c_string(&r))
+    .unwrap_or_else(std::ptr::null_mut)
 }
 
 /// Run a slide content generation task.
@@ -334,26 +273,12 @@ pub unsafe extern "C" fn zkai_generate_slides(
         Err(_) => return std::ptr::null_mut(),
     };
 
-    let mut guard = lock_state();
-    let runtime = match guard.runtime.take() {
-        Some(rt) => rt,
-        None => return std::ptr::null_mut(),
-    };
-    let mut engine = match guard.engine.take() {
-        Some(e) => e,
-        None => {
-            guard.runtime = Some(runtime);
-            return std::ptr::null_mut();
-        }
-    };
-
-    let result = runtime.block_on(engine.generate_slides(topic, source_content, language, TaskOptions::default()));
-    guard.engine = Some(engine);
-    guard.runtime = Some(runtime);
-    match result {
-        Ok(r) => to_c_string(&r),
-        Err(_) => std::ptr::null_mut(),
-    }
+    with_engine(|runtime, engine| {
+        runtime.block_on(engine.generate_slides(topic, source_content, language, TaskOptions::default()))
+    })
+    .and_then(|result| result.ok())
+    .map(|r| to_c_string(&r))
+    .unwrap_or_else(std::ptr::null_mut)
 }
 
 /// Run an image search task.
@@ -370,26 +295,12 @@ pub unsafe extern "C" fn zkai_image_search(
         Err(_) => return std::ptr::null_mut(),
     };
 
-    let mut guard = lock_state();
-    let runtime = match guard.runtime.take() {
-        Some(rt) => rt,
-        None => return std::ptr::null_mut(),
-    };
-    let mut engine = match guard.engine.take() {
-        Some(e) => e,
-        None => {
-            guard.runtime = Some(runtime);
-            return std::ptr::null_mut();
-        }
-    };
-
-    let result = runtime.block_on(engine.image_search(query, TaskOptions::default()));
-    guard.engine = Some(engine);
-    guard.runtime = Some(runtime);
-    match result {
-        Ok(r) => to_c_string(&r),
-        Err(_) => std::ptr::null_mut(),
-    }
+    with_engine(|runtime, engine| {
+        runtime.block_on(engine.image_search(query, TaskOptions::default()))
+    })
+    .and_then(|result| result.ok())
+    .map(|r| to_c_string(&r))
+    .unwrap_or_else(std::ptr::null_mut)
 }
 
 /// Shutdown the engine.

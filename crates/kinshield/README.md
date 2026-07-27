@@ -149,10 +149,20 @@ Each indicator has keyword sets in 8 languages. Strength is quantized to Low/Med
 | `NetworkMonitor` | Verify no network calls |
 | `PolicyEngine` | Family policy enforcement |
 
-## Running the Demo
+## Running the Demos
 
 ```bash
-cargo run -p kinshield-scam-demo
+# Scam detection demo (SMS, email, messaging, browser, call)
+cargo run -p kinshield --bin kinshield-scam-demo
+
+# Privacy & compliance demo (PII scanning, redaction, audit logs)
+cargo run -p kinshield --bin kinshield-privacy-demo
+
+# Evaluation harness (runs detection on SMS eval dataset)
+cargo run -p kinshield --bin kinshield-eval
+
+# Debug embedding prototypes
+cargo run -p kinshield --bin debug-embed
 ```
 
 ## Running Tests

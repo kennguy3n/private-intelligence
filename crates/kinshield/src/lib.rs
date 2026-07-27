@@ -6,8 +6,8 @@
 //!
 //! # Key Features
 //!
-//! - **25-indicator ontology** with SEA multi-language keyword detection
-//! - **15 scam type families** with Southeast Asia focus
+//! - **29-indicator ontology** with SEA multi-language keyword detection
+//! - **17 scam type families** with Southeast Asia focus
 //! - **Family construct** with per-member sensitivity thresholds
 //! - **Bounded decision traces** — privacy-preserving, no raw text transmitted
 //! - **Structured feedback** separating detection, classification, explanation
@@ -57,7 +57,7 @@ pub use ontology::{
 pub use taxonomy::{ScamType, SCAM_TAXONOMY_VERSION};
 pub use detection::{
     DetectionResult, PredictedOutcome,
-    keyword, embedding, url, scoring,
+    keyword, embedding, url, scoring, heuristics,
 };
 pub use decision_trace::{DecisionTrace, LabelConfidence, AGGREGATION_SCHEMA_VERSION};
 pub use feedback::{FeedbackKind, FeedbackRecord, FeedbackSource, LabelTrust};
@@ -94,6 +94,10 @@ pub struct KinShieldEngine {
     family: Option<FamilyCircle>,
     /// Whether the e5-small model has been loaded.
     embedding_model_loaded: bool,
+    /// Cached embedding prototypes keyed by indicator ID.
+    /// Pre-computed once when the model is loaded to avoid
+    /// re-running inference on static prototype text every detection.
+    embedding_cache: HashMap<IndicatorId, Vec<Vec<f32>>>,
     /// Pending detection contexts keyed by detection_id.
     /// Used to correlate feedback with calibration updates.
     /// Entries are removed when feedback is submitted or when evicted.
@@ -134,7 +138,8 @@ impl KinShieldEngine {
     /// The audit log is stored at `<cache_dir>/kinshield_audit.jsonl`.
     pub async fn new(cache_dir: impl AsRef<Path>) -> Result<Self, zk_ai_core::ZkAiError> {
         let ai_engine = AiEngine::new(cache_dir.as_ref()).await?;
-        let calibration = CalibrationLayer::new(MODEL_VERSION);
+        let mut calibration = CalibrationLayer::new(MODEL_VERSION);
+        calibration.seed_defaults();
         let aggregation = AggregationBuffer::new();
 
         let audit_path = cache_dir.as_ref().join("kinshield_audit.jsonl");
@@ -146,6 +151,7 @@ impl KinShieldEngine {
             aggregation,
             family: None,
             embedding_model_loaded: false,
+            embedding_cache: HashMap::new(),
             pending_contexts: HashMap::new(),
             pending_context_order: VecDeque::new(),
             max_pending_contexts: 1000,
@@ -158,11 +164,19 @@ impl KinShieldEngine {
         })
     }
 
-    /// Ensure the e5-small embedding model is loaded.
+    /// Ensure the e5-small embedding model is loaded and pre-compute
+    /// prototype embeddings for all indicators.
     async fn ensure_embedding_model(&mut self) -> Result<(), zk_ai_core::ZkAiError> {
         if !self.embedding_model_loaded {
             self.ai_engine.ensure_model(&ModelSpec::e5_small_int8()).await?;
             self.embedding_model_loaded = true;
+
+            // Pre-compute all prototype embeddings once
+            self.embedding_cache = embedding::precompute_prototype_cache(&mut self.ai_engine).await?;
+            tracing::info!(
+                indicators = self.embedding_cache.len(),
+                "embedding prototype cache built"
+            );
         }
         Ok(())
     }
@@ -232,7 +246,11 @@ impl KinShieldEngine {
             match self.ensure_embedding_model().await {
                 Ok(()) => {
                     match embedding::detect_embeddings(
-                        &mut self.ai_engine, text, channel, language,
+                        &mut self.ai_engine,
+                        &self.embedding_cache,
+                        text,
+                        channel,
+                        language,
                     ).await {
                         Ok(emb_hits) => {
                             for emb_hit in emb_hits {
@@ -262,6 +280,18 @@ impl KinShieldEngine {
             }
         }
 
+        // 5. Structural heuristic detection
+        let heuristic_hits = heuristics::detect_heuristics(text, channel);
+        for h_hit in heuristic_hits {
+            if let Some(existing) = indicators.iter_mut().find(|h| h.id == h_hit.id) {
+                if h_hit.strength.weight() > existing.strength.weight() {
+                    existing.strength = h_hit.strength;
+                }
+            } else {
+                indicators.push(h_hit);
+            }
+        }
+
         Ok(indicators)
     }
 
@@ -279,13 +309,14 @@ impl KinShieldEngine {
     /// Detect scam risk in a message.
     ///
     /// Runs the full detection pipeline:
-    /// 1. Keyword-based indicator detection (all 25 indicators, multi-language)
+    /// 1. Keyword-based indicator detection (all 29 indicators, multi-language)
     /// 2. URL/link analysis for suspicious patterns
     /// 3. Embedding-based semantic detection (e5-small, for semantic indicators)
-    /// 4. Merge and deduplicate indicator hits
-    /// 5. Compute risk bucket with monotonic constraints
-    /// 6. Classify scam type
-    /// 7. Build detection result and decision trace
+    /// 4. Structural heuristic detection (conversation format, wrong-number pivot, etc.)
+    /// 5. Merge and deduplicate indicator hits
+    /// 6. Compute risk bucket with monotonic constraints
+    /// 7. Classify scam type
+    /// 8. Build detection result and decision trace
     ///
     /// `member_id` identifies which family member received the message.
     /// If a family circle is configured, per-member sensitivity thresholds
@@ -300,7 +331,7 @@ impl KinShieldEngine {
     ) -> Result<DetectionResult, zk_ai_core::ZkAiError> {
         let start = std::time::Instant::now();
 
-        // 1-4. Extract indicators using the shared pipeline
+        // 1-5. Extract indicators using the shared pipeline
         let mut indicators = self.extract_indicators(text, channel, language).await?;
 
         // 4b. Threat intelligence boost — match against known campaigns
@@ -320,13 +351,13 @@ impl KinShieldEngine {
         let indicators = Self::sort_indicators(indicators);
 
         // 6. Compute risk bucket
-        let raw_bucket = scoring::compute_risk_bucket(&indicators, channel);
+        let raw_bucket = scoring::compute_risk_bucket(&indicators, channel, text);
         let risk_bucket = self.calibration.calibrate(raw_bucket, channel, language);
 
         // 7. Predict outcome and scam type
         let predicted_outcome = scoring::predict_outcome(risk_bucket);
         let scam_type = if predicted_outcome != PredictedOutcome::Benign {
-            scoring::classify_scam_type(&indicators)
+            scoring::classify_scam_type(&indicators, text)
         } else {
             None
         };
@@ -744,6 +775,7 @@ impl KinShieldEngine {
     pub fn delete_local_data(&mut self) {
         self.aggregation = AggregationBuffer::new();
         self.calibration = CalibrationLayer::new(MODEL_VERSION);
+        self.calibration.seed_defaults();
         self.pending_contexts.clear();
         self.pending_context_order.clear();
         self.contribution_limits = ContributionLimits::new();

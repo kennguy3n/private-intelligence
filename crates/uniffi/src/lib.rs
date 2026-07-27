@@ -12,13 +12,13 @@ use zk_ai_core::{
 
 /// Device tier enum for FFI.
 #[uniffi::export]
-pub fn detect_device() -> FfiDeviceProfile {
+pub fn detect_device() -> Result<FfiDeviceProfile, String> {
     // On mobile, the binding layer (Swift/Kotlin) should call
     // detect_device_with_values instead, passing platform-specific
     // values. This default uses the core's native detection.
-    let runtime = tokio::runtime::Runtime::new().unwrap();
+    let runtime = tokio::runtime::Runtime::new().map_err(|e| e.to_string())?;
     let profile = runtime.block_on(DeviceProfiler::detect()).unwrap_or_default();
-    FfiDeviceProfile::from(profile)
+    Ok(FfiDeviceProfile::from(profile))
 }
 
 /// Detect device with externally-provided values (from Swift/Kotlin).
@@ -168,10 +168,10 @@ impl ZkAiEngine {
         Ok(Self { inner: tokio::sync::Mutex::new(engine) })
     }
 
-    pub fn profile(&self) -> FfiDeviceProfile {
-        let runtime = tokio::runtime::Runtime::new().map_err(|e| e.to_string()).unwrap();
+    pub fn profile(&self) -> Result<FfiDeviceProfile, String> {
+        let runtime = tokio::runtime::Runtime::new().map_err(|e| e.to_string())?;
         let guard = runtime.block_on(self.inner.lock());
-        FfiDeviceProfile::from(guard.profile().clone())
+        Ok(FfiDeviceProfile::from(guard.profile().clone()))
     }
 
     pub async fn summarize(&self, text: String, language: String) -> Result<FfiTaskResult, String> {
@@ -400,7 +400,7 @@ impl FfiSwarmCoordinator {
     /// Update a remote device's capability.
     pub fn update_device(&self, cap: FfiSwarmCapability) {
         let native: DeviceCapability = cap.into();
-        let mut devices = self.devices.lock().unwrap();
+        let mut devices = self.devices.lock().unwrap_or_else(|e| e.into_inner());
         if let Some(existing) = devices.iter_mut().find(|d| d.device_id == native.device_id) {
             *existing = native;
         } else {
@@ -451,7 +451,7 @@ impl FfiSwarmCoordinator {
 
     /// Get all known device IDs.
     pub fn device_ids(&self) -> Vec<String> {
-        let devices = self.devices.lock().unwrap();
+        let devices = self.devices.lock().unwrap_or_else(|e| e.into_inner());
         devices.iter().map(|d| d.device_id.clone()).collect()
     }
 }

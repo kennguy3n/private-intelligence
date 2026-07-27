@@ -126,7 +126,9 @@ impl ZkAiEngine {
         let runtime = tokio::runtime::Runtime::new()
             .map_err(|e| Error::from_reason(format!("runtime: {e}")))?;
         let guard = runtime.block_on(inner.lock());
-        let p = guard.as_ref().unwrap().profile().clone();
+        let p = guard.as_ref()
+            .ok_or_else(|| Error::from_reason("engine not initialized"))?
+            .profile().clone();
         Ok(DeviceProfileJs::from(p))
     }
 
@@ -134,7 +136,8 @@ impl ZkAiEngine {
     pub async fn summarize(&self, text: String, language: String) -> Result<TaskResultJs> {
         let inner = self.inner.clone();
         let mut guard = inner.lock().await;
-        let result = guard.as_mut().unwrap()
+        let result = guard.as_mut()
+            .ok_or_else(|| Error::from_reason("engine not initialized"))?
             .summarize(&text, &language, CoreTaskOptions::default())
             .await
             .map_err(|e| Error::from_reason(e.to_string()))?;
@@ -151,7 +154,8 @@ impl ZkAiEngine {
     ) -> Result<TaskResultJs> {
         let inner = self.inner.clone();
         let mut guard = inner.lock().await;
-        let result = guard.as_mut().unwrap()
+        let result = guard.as_mut()
+            .ok_or_else(|| Error::from_reason("engine not initialized"))?
             .summarize(&text, &language, options.into())
             .await
             .map_err(|e| Error::from_reason(e.to_string()))?;
@@ -169,7 +173,8 @@ impl ZkAiEngine {
         let inner = self.inner.clone();
         let mut guard = inner.lock().await;
         let opts = CoreTaskOptions { stream: true, ..Default::default() };
-        let result = guard.as_mut().unwrap()
+        let result = guard.as_mut()
+            .ok_or_else(|| Error::from_reason("engine not initialized"))?
             .summarize(&text, &language, opts)
             .await
             .map_err(|e| Error::from_reason(e.to_string()))?;
@@ -180,7 +185,8 @@ impl ZkAiEngine {
     pub async fn key_points(&self, text: String, language: String) -> Result<TaskResultJs> {
         let inner = self.inner.clone();
         let mut guard = inner.lock().await;
-        let result = guard.as_mut().unwrap()
+        let result = guard.as_mut()
+            .ok_or_else(|| Error::from_reason("engine not initialized"))?
             .key_points(&text, &language, CoreTaskOptions::default())
             .await
             .map_err(|e| Error::from_reason(e.to_string()))?;
@@ -196,7 +202,8 @@ impl ZkAiEngine {
     ) -> Result<TaskResultJs> {
         let inner = self.inner.clone();
         let mut guard = inner.lock().await;
-        let result = guard.as_mut().unwrap()
+        let result = guard.as_mut()
+            .ok_or_else(|| Error::from_reason("engine not initialized"))?
             .translate(&text, &source_lang, &target_lang, CoreTaskOptions::default())
             .await
             .map_err(|e| Error::from_reason(e.to_string()))?;
@@ -212,7 +219,8 @@ impl ZkAiEngine {
     ) -> Result<TaskResultJs> {
         let inner = self.inner.clone();
         let mut guard = inner.lock().await;
-        let result = guard.as_mut().unwrap()
+        let result = guard.as_mut()
+            .ok_or_else(|| Error::from_reason("engine not initialized"))?
             .generate_doc(&topic, &outline, &language, CoreTaskOptions::default())
             .await
             .map_err(|e| Error::from_reason(e.to_string()))?;
@@ -228,7 +236,8 @@ impl ZkAiEngine {
     ) -> Result<TaskResultJs> {
         let inner = self.inner.clone();
         let mut guard = inner.lock().await;
-        let result = guard.as_mut().unwrap()
+        let result = guard.as_mut()
+            .ok_or_else(|| Error::from_reason("engine not initialized"))?
             .generate_slides(&topic, &source_content, &language, CoreTaskOptions::default())
             .await
             .map_err(|e| Error::from_reason(e.to_string()))?;
@@ -239,7 +248,8 @@ impl ZkAiEngine {
     pub async fn image_search(&self, query: String) -> Result<TaskResultJs> {
         let inner = self.inner.clone();
         let mut guard = inner.lock().await;
-        let result = guard.as_mut().unwrap()
+        let result = guard.as_mut()
+            .ok_or_else(|| Error::from_reason("engine not initialized"))?
             .image_search(&query, CoreTaskOptions::default())
             .await
             .map_err(|e| Error::from_reason(e.to_string()))?;
@@ -250,7 +260,8 @@ impl ZkAiEngine {
     pub async fn semantic_search(&self, query: String) -> Result<TaskResultJs> {
         let inner = self.inner.clone();
         let mut guard = inner.lock().await;
-        let result = guard.as_mut().unwrap()
+        let result = guard.as_mut()
+            .ok_or_else(|| Error::from_reason("engine not initialized"))?
             .semantic_search(&query, CoreTaskOptions::default())
             .await
             .map_err(|e| Error::from_reason(e.to_string()))?;
@@ -261,7 +272,8 @@ impl ZkAiEngine {
     pub async fn shutdown(&self) -> Result<()> {
         let inner = self.inner.clone();
         let mut guard = inner.lock().await;
-        guard.as_mut().unwrap()
+        guard.as_mut()
+            .ok_or_else(|| Error::from_reason("engine not initialized"))?
             .shutdown()
             .await
             .map_err(|e| Error::from_reason(e.to_string()))

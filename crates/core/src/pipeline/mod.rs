@@ -143,6 +143,141 @@ pub fn count_keyword_matches(lower_text: &str, keywords: &[&str]) -> usize {
     keywords.iter().filter(|&k| keyword_match(lower_text, k)).count()
 }
 
+/// Normalize common SMS slang/abbreviations to their full forms.
+///
+/// This is applied before keyword matching to catch scam messages that use
+/// informal abbreviations common in Southeast Asian SMS culture.
+/// Only expands ASCII slang; non-ASCII text is passed through unchanged.
+pub fn normalize_sms_slang(text: &str) -> String {
+    let lower = text.to_lowercase();
+
+    // Pad with spaces so that slang at the start or end of the text is
+    // also matched (e.g., "UR account" at the start of a message).
+    // Also replace newlines with spaces so slang after a newline is caught.
+    let padded = format!(" {} ", lower.replace('\n', " "));
+
+    let patterns: &[&str] = &[
+        " ur ", " u ", " r ", " n ", " bcoz ", " bcos ", " bcus ",
+        " plis ", " pls ", " plz ", " dun ", " dont ", " wat ", " wen ",
+        " abt ", " frm ", " msg ", " info ", " tk ", " thx ", " tq ",
+        " nvm ", " asap", " b4 ", " 2moro", " 2day", " 2nite", " rly ",
+        " wat's ", " d ", " dat ", " dis ", " urself", " urslf",
+        " pw ", " pwd ", " acc ", " acct ", " amt ", " bal ", " docs ",
+        " req ", " reqd ", " appr ", " cnfm ", " vrfy ", " pmt ", " txn ",
+    ];
+
+    let replacements: &[&str] = &[
+        " your ", " you ", " are ", " and ", " because ", " because ", " because ",
+        " please ", " please ", " please ", " don't ", " don't ", " what ", " when ",
+        " about ", " from ", " message ", " information ", " thanks ", " thanks ", " thanks ",
+        " nevermind ", " as soon as possible", " before ", " tomorrow", " today", " tonight", " really ",
+        " what's ", " the ", " that ", " this ", " yourself", " yourself",
+        " password ", " password ", " account ", " account ", " amount ", " balance ", " documents ",
+        " required ", " required ", " approved ", " confirm ", " verify ", " payment ", " transaction ",
+    ];
+
+    let ac = aho_corasick::AhoCorasick::new(patterns).unwrap();
+    let result = ac.replace_all(&padded, replacements);
+
+    // Remove the padding spaces we added at the start and end
+    result.trim().to_string()
+}
+
+/// Compute Levenshtein edit distance between two ASCII strings.
+/// Returns the distance (0 = identical). Caps at 255 for efficiency.
+fn levenshtein(a: &[u8], b: &[u8]) -> u8 {
+    let (a_len, b_len) = (a.len(), b.len());
+    if a_len == 0 {
+        return b_len.min(255) as u8;
+    }
+    if b_len == 0 {
+        return a_len.min(255) as u8;
+    }
+
+    let mut prev: Vec<u8> = (0..=b_len).map(|i| i.min(255) as u8).collect();
+    let mut curr: Vec<u8> = vec![0; b_len + 1];
+
+    for i in 1..=a_len {
+        curr[0] = i.min(255) as u8;
+        for j in 1..=b_len {
+            let cost = if a[i - 1] == b[j - 1] { 0 } else { 1 };
+            curr[j] = (prev[j].min(curr[j - 1]) + cost)
+                .min(prev[j - 1] + cost)
+                .min(255);
+        }
+        std::mem::swap(&mut prev, &mut curr);
+    }
+
+    prev[b_len]
+}
+
+/// Maximum allowed edit distance based on keyword length.
+///
+/// - Keywords ≤4 chars: no fuzzy matching (too many false positives)
+/// - Keywords 5-8 chars: edit distance 1
+/// - Keywords 9+ chars: edit distance 2
+fn max_edit_distance(keyword_len: usize) -> usize {
+    if keyword_len <= 4 {
+        0
+    } else if keyword_len <= 8 {
+        1
+    } else {
+        2
+    }
+}
+
+/// Check if a (lowercased) text contains a keyword, with fuzzy matching fallback.
+///
+/// First tries exact `keyword_match`. If that fails and the keyword is long
+/// enough (5+ chars), tries fuzzy matching by scanning each word in the text
+/// and comparing with Levenshtein distance.
+///
+/// Returns `(matched, was_fuzzy)`.
+pub fn keyword_match_fuzzy(lower_text: &str, keyword: &str) -> (bool, bool) {
+    if keyword_match(lower_text, keyword) {
+        return (true, false);
+    }
+
+    let max_dist = max_edit_distance(keyword.len());
+    if max_dist == 0 {
+        return (false, false);
+    }
+
+    let keyword_bytes = keyword.as_bytes();
+
+    for word in lower_text.split(|c: char| !c.is_ascii_alphanumeric()) {
+        if word.is_empty() {
+            continue;
+        }
+        let word_bytes = word.as_bytes();
+        let dist = levenshtein(word_bytes, keyword_bytes);
+        if dist as usize <= max_dist {
+            return (true, true);
+        }
+    }
+
+    (false, false)
+}
+
+/// Count keyword matches with fuzzy matching support.
+///
+/// Returns `(total_matches, fuzzy_matches)` where `fuzzy_matches` is the count
+/// of matches that were only found via fuzzy matching (not exact).
+pub fn count_keyword_matches_fuzzy(lower_text: &str, keywords: &[&str]) -> (usize, usize) {
+    let mut total = 0usize;
+    let mut fuzzy = 0usize;
+    for &k in keywords {
+        let (matched, was_fuzzy) = keyword_match_fuzzy(lower_text, k);
+        if matched {
+            total += 1;
+            if was_fuzzy {
+                fuzzy += 1;
+            }
+        }
+    }
+    (total, fuzzy)
+}
+
 /// Supported AI tasks.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Task {

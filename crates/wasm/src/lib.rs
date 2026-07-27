@@ -87,31 +87,39 @@ impl JsAiEngine {
     }
 
     /// Get the device profile.
-    pub fn profile(&self) -> JsDeviceProfile {
-        let profile = self.engine.borrow().as_ref().unwrap().profile().clone();
-        JsDeviceProfile { inner: profile }
+    pub fn profile(&self) -> Result<JsDeviceProfile, JsValue> {
+        let profile = self.engine.borrow().as_ref()
+            .ok_or_else(|| JsValue::from_str("engine not initialized"))?
+            .profile().clone();
+        Ok(JsDeviceProfile { inner: profile })
     }
 
     /// Summarize text.
     pub fn summarize(&self, text: String, language: String) -> js_sys::Promise {
-        let engine = self.engine.clone();
+        let cell = self.engine.clone();
         wasm_bindgen_futures::future_to_promise(async move {
-            let result = engine.borrow_mut().as_mut().unwrap()
-                .summarize(&text, &language, CoreTaskOptions::default())
+            let mut engine = cell.borrow_mut().take()
+                .ok_or_else(|| JsValue::from_str("engine not initialized"))?;
+            let result = engine.summarize(&text, &language, CoreTaskOptions::default())
                 .await
-                .map_err(|e| JsValue::from_str(&e.to_string()))?;
+                .map_err(|e| JsValue::from_str(&e.to_string()));
+            *cell.borrow_mut() = Some(engine);
+            let result = result?;
             Ok(JsTaskResult { inner: result }.into())
         })
     }
 
     /// Extract key points.
     pub fn key_points(&self, text: String, language: String) -> js_sys::Promise {
-        let engine = self.engine.clone();
+        let cell = self.engine.clone();
         wasm_bindgen_futures::future_to_promise(async move {
-            let result = engine.borrow_mut().as_mut().unwrap()
-                .key_points(&text, &language, CoreTaskOptions::default())
+            let mut engine = cell.borrow_mut().take()
+                .ok_or_else(|| JsValue::from_str("engine not initialized"))?;
+            let result = engine.key_points(&text, &language, CoreTaskOptions::default())
                 .await
-                .map_err(|e| JsValue::from_str(&e.to_string()))?;
+                .map_err(|e| JsValue::from_str(&e.to_string()));
+            *cell.borrow_mut() = Some(engine);
+            let result = result?;
             Ok(JsTaskResult { inner: result }.into())
         })
     }
@@ -123,12 +131,15 @@ impl JsAiEngine {
         source_lang: String,
         target_lang: String,
     ) -> js_sys::Promise {
-        let engine = self.engine.clone();
+        let cell = self.engine.clone();
         wasm_bindgen_futures::future_to_promise(async move {
-            let result = engine.borrow_mut().as_mut().unwrap()
-                .translate(&text, &source_lang, &target_lang, CoreTaskOptions::default())
+            let mut engine = cell.borrow_mut().take()
+                .ok_or_else(|| JsValue::from_str("engine not initialized"))?;
+            let result = engine.translate(&text, &source_lang, &target_lang, CoreTaskOptions::default())
                 .await
-                .map_err(|e| JsValue::from_str(&e.to_string()))?;
+                .map_err(|e| JsValue::from_str(&e.to_string()));
+            *cell.borrow_mut() = Some(engine);
+            let result = result?;
             Ok(JsTaskResult { inner: result }.into())
         })
     }
@@ -140,12 +151,15 @@ impl JsAiEngine {
         outline: String,
         language: String,
     ) -> js_sys::Promise {
-        let engine = self.engine.clone();
+        let cell = self.engine.clone();
         wasm_bindgen_futures::future_to_promise(async move {
-            let result = engine.borrow_mut().as_mut().unwrap()
-                .generate_doc(&topic, &outline, &language, CoreTaskOptions::default())
+            let mut engine = cell.borrow_mut().take()
+                .ok_or_else(|| JsValue::from_str("engine not initialized"))?;
+            let result = engine.generate_doc(&topic, &outline, &language, CoreTaskOptions::default())
                 .await
-                .map_err(|e| JsValue::from_str(&e.to_string()))?;
+                .map_err(|e| JsValue::from_str(&e.to_string()));
+            *cell.borrow_mut() = Some(engine);
+            let result = result?;
             Ok(JsTaskResult { inner: result }.into())
         })
     }
@@ -157,61 +171,76 @@ impl JsAiEngine {
         source_content: String,
         language: String,
     ) -> js_sys::Promise {
-        let engine = self.engine.clone();
+        let cell = self.engine.clone();
         wasm_bindgen_futures::future_to_promise(async move {
-            let result = engine.borrow_mut().as_mut().unwrap()
-                .generate_slides(&topic, &source_content, &language, CoreTaskOptions::default())
+            let mut engine = cell.borrow_mut().take()
+                .ok_or_else(|| JsValue::from_str("engine not initialized"))?;
+            let result = engine.generate_slides(&topic, &source_content, &language, CoreTaskOptions::default())
                 .await
-                .map_err(|e| JsValue::from_str(&e.to_string()))?;
+                .map_err(|e| JsValue::from_str(&e.to_string()));
+            *cell.borrow_mut() = Some(engine);
+            let result = result?;
             Ok(JsTaskResult { inner: result }.into())
         })
     }
 
     /// Search for images.
     pub fn image_search(&self, query: String) -> js_sys::Promise {
-        let engine = self.engine.clone();
+        let cell = self.engine.clone();
         wasm_bindgen_futures::future_to_promise(async move {
-            let result = engine.borrow_mut().as_mut().unwrap()
-                .image_search(&query, CoreTaskOptions::default())
+            let mut engine = cell.borrow_mut().take()
+                .ok_or_else(|| JsValue::from_str("engine not initialized"))?;
+            let result = engine.image_search(&query, CoreTaskOptions::default())
                 .await
-                .map_err(|e| JsValue::from_str(&e.to_string()))?;
+                .map_err(|e| JsValue::from_str(&e.to_string()));
+            *cell.borrow_mut() = Some(engine);
+            let result = result?;
             Ok(JsTaskResult { inner: result }.into())
         })
     }
 
     /// Semantic search over text passages.
     pub fn semantic_search(&self, query: String) -> js_sys::Promise {
-        let engine = self.engine.clone();
+        let cell = self.engine.clone();
         wasm_bindgen_futures::future_to_promise(async move {
-            let result = engine.borrow_mut().as_mut().unwrap()
-                .semantic_search(&query, CoreTaskOptions::default())
+            let mut engine = cell.borrow_mut().take()
+                .ok_or_else(|| JsValue::from_str("engine not initialized"))?;
+            let result = engine.semantic_search(&query, CoreTaskOptions::default())
                 .await
-                .map_err(|e| JsValue::from_str(&e.to_string()))?;
+                .map_err(|e| JsValue::from_str(&e.to_string()));
+            *cell.borrow_mut() = Some(engine);
+            let result = result?;
             Ok(JsTaskResult { inner: result }.into())
         })
     }
 
     /// Summarize text with streaming enabled.
     pub fn summarize_stream(&self, text: String, language: String) -> js_sys::Promise {
-        let engine = self.engine.clone();
+        let cell = self.engine.clone();
         wasm_bindgen_futures::future_to_promise(async move {
             let opts = CoreTaskOptions { stream: true, ..Default::default() };
-            let result = engine.borrow_mut().as_mut().unwrap()
-                .summarize(&text, &language, opts)
+            let mut engine = cell.borrow_mut().take()
+                .ok_or_else(|| JsValue::from_str("engine not initialized"))?;
+            let result = engine.summarize(&text, &language, opts)
                 .await
-                .map_err(|e| JsValue::from_str(&e.to_string()))?;
+                .map_err(|e| JsValue::from_str(&e.to_string()));
+            *cell.borrow_mut() = Some(engine);
+            let result = result?;
             Ok(JsTaskResult { inner: result }.into())
         })
     }
 
     /// Shutdown the engine.
     pub fn shutdown(&self) -> js_sys::Promise {
-        let engine = self.engine.clone();
+        let cell = self.engine.clone();
         wasm_bindgen_futures::future_to_promise(async move {
-            engine.borrow_mut().as_mut().unwrap()
-                .shutdown()
+            let mut engine = cell.borrow_mut().take()
+                .ok_or_else(|| JsValue::from_str("engine not initialized"))?;
+            let result = engine.shutdown()
                 .await
-                .map_err(|e| JsValue::from_str(&e.to_string()))?;
+                .map_err(|e| JsValue::from_str(&e.to_string()));
+            *cell.borrow_mut() = Some(engine);
+            result?;
             Ok(JsValue::UNDEFINED)
         })
     }

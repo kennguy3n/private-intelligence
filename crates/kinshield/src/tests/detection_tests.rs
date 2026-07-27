@@ -88,7 +88,7 @@ fn test_url_detection_no_url() {
 #[test]
 fn test_risk_scoring_benign() {
     let indicators = vec![];
-    let bucket = scoring::compute_risk_bucket(&indicators, Channel::Sms);
+    let bucket = scoring::compute_risk_bucket(&indicators, Channel::Sms, "");
     assert_eq!(bucket, 1, "No indicators should be bucket 1");
 }
 
@@ -99,7 +99,7 @@ fn test_risk_scoring_high_value_indicator() {
         strength: IndicatorStrength::High,
         match_count: 3,
     }];
-    let bucket = scoring::compute_risk_bucket(&indicators, Channel::Sms);
+    let bucket = scoring::compute_risk_bucket(&indicators, Channel::Sms, "");
     assert!(bucket >= 4, "Credential request High should be min bucket 4, got {}", bucket);
 }
 
@@ -117,7 +117,7 @@ fn test_risk_scoring_urgency_plus_financial() {
             match_count: 1,
         },
     ];
-    let bucket = scoring::compute_risk_bucket(&indicators, Channel::Sms);
+    let bucket = scoring::compute_risk_bucket(&indicators, Channel::Sms, "");
     assert!(bucket >= 3, "Urgency + Financial should be min bucket 3, got {}", bucket);
 }
 
@@ -128,8 +128,8 @@ fn test_risk_scoring_channel_boost() {
         strength: IndicatorStrength::Medium,
         match_count: 1,
     }];
-    let sms_bucket = scoring::compute_risk_bucket(&indicators, Channel::Sms);
-    let email_bucket = scoring::compute_risk_bucket(&indicators, Channel::Email);
+    let sms_bucket = scoring::compute_risk_bucket(&indicators, Channel::Sms, "");
+    let email_bucket = scoring::compute_risk_bucket(&indicators, Channel::Email, "");
     assert!(sms_bucket >= email_bucket, "SMS should boost risk over email");
 }
 
@@ -161,7 +161,7 @@ fn test_classify_scam_type_bank_impersonation() {
             match_count: 1,
         },
     ];
-    let scam_type = scoring::classify_scam_type(&indicators);
+    let scam_type = scoring::classify_scam_type(&indicators, "");
     assert_eq!(scam_type, Some(ScamType::BankImpersonation));
 }
 
@@ -179,7 +179,7 @@ fn test_classify_scam_type_investment_fraud() {
             match_count: 1,
         },
     ];
-    let scam_type = scoring::classify_scam_type(&indicators);
+    let scam_type = scoring::classify_scam_type(&indicators, "");
     assert_eq!(scam_type, Some(ScamType::InvestmentFraud));
 }
 
@@ -190,14 +190,14 @@ fn test_classify_scam_type_delivery_scam() {
         strength: IndicatorStrength::High,
         match_count: 2,
     }];
-    let scam_type = scoring::classify_scam_type(&indicators);
+    let scam_type = scoring::classify_scam_type(&indicators, "");
     assert_eq!(scam_type, Some(ScamType::DeliveryScam));
 }
 
 #[test]
 fn test_classify_scam_type_none_for_benign() {
     let indicators = vec![];
-    let scam_type = scoring::classify_scam_type(&indicators);
+    let scam_type = scoring::classify_scam_type(&indicators, "");
     assert_eq!(scam_type, None);
 }
 
@@ -230,7 +230,7 @@ fn test_classify_scam_type_telco_impersonation() {
             match_count: 1,
         },
     ];
-    let scam_type = scoring::classify_scam_type(&indicators);
+    let scam_type = scoring::classify_scam_type(&indicators, "");
     assert_eq!(
         scam_type,
         Some(ScamType::TelcoImpersonation),
@@ -242,7 +242,7 @@ fn test_classify_scam_type_telco_impersonation() {
 fn test_call_channel_benign_no_indicators() {
     // A call transcript with no indicators should NOT be forced to bucket 3
     let indicators = vec![];
-    let bucket = scoring::compute_risk_bucket(&indicators, Channel::Call);
+    let bucket = scoring::compute_risk_bucket(&indicators, Channel::Call, "");
     assert_eq!(
         bucket, 1,
         "Call channel with no indicators should be bucket 1, got {}", bucket
@@ -257,7 +257,7 @@ fn test_call_channel_with_indicators_boosts() {
         strength: IndicatorStrength::High,
         match_count: 1,
     }];
-    let bucket = scoring::compute_risk_bucket(&indicators, Channel::Call);
+    let bucket = scoring::compute_risk_bucket(&indicators, Channel::Call, "");
     assert!(
         bucket >= 3,
         "Call channel with indicators should be boosted to min bucket 3, got {}",
@@ -288,7 +288,7 @@ fn test_classify_scam_type_parcel_customs() {
         IndicatorHit { id: IndicatorId::DeliveryLure, strength: IndicatorStrength::High, match_count: 1 },
         IndicatorHit { id: IndicatorId::TaxPenalty, strength: IndicatorStrength::Medium, match_count: 1 },
     ];
-    let scam_type = scoring::classify_scam_type(&indicators);
+    let scam_type = scoring::classify_scam_type(&indicators, "");
     assert_eq!(
         scam_type,
         Some(ScamType::ParcelCustoms),
@@ -303,7 +303,7 @@ fn test_classify_scam_type_delivery_scam_without_tax_penalty() {
         IndicatorHit { id: IndicatorId::DeliveryLure, strength: IndicatorStrength::High, match_count: 1 },
         IndicatorHit { id: IndicatorId::LinkSuspicious, strength: IndicatorStrength::Medium, match_count: 1 },
     ];
-    let scam_type = scoring::classify_scam_type(&indicators);
+    let scam_type = scoring::classify_scam_type(&indicators, "");
     assert_eq!(
         scam_type,
         Some(ScamType::DeliveryScam),

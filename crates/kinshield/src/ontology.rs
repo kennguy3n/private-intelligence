@@ -1,4 +1,4 @@
-//! Indicator ontology — 25 fixed, versioned scam indicators.
+//! Indicator ontology — 29 fixed, versioned scam indicators.
 //!
 //! Each indicator has: id, category, description, and multi-language
 //! keyword sets for detection. Indicator strength is quantized to
@@ -84,6 +84,10 @@ pub enum IndicatorId {
     FreeGift,
     FamilyEmergency,
     TaxPenalty,
+    Sextortion,
+    RecoveryScam,
+    GovernmentBenefitLure,
+    FakeMarketplace,
 }
 
 impl IndicatorId {
@@ -115,6 +119,10 @@ impl IndicatorId {
             IndicatorId::FreeGift => "free_gift",
             IndicatorId::FamilyEmergency => "family_emergency",
             IndicatorId::TaxPenalty => "tax_penalty",
+            IndicatorId::Sextortion => "sextortion",
+            IndicatorId::RecoveryScam => "recovery_scam",
+            IndicatorId::GovernmentBenefitLure => "government_benefit_lure",
+            IndicatorId::FakeMarketplace => "fake_marketplace",
         }
     }
 
@@ -146,6 +154,10 @@ impl IndicatorId {
             IndicatorId::FreeGift => IndicatorCategory::Lure,
             IndicatorId::FamilyEmergency => IndicatorCategory::Social,
             IndicatorId::TaxPenalty => IndicatorCategory::Financial,
+            IndicatorId::Sextortion => IndicatorCategory::Social,
+            IndicatorId::RecoveryScam => IndicatorCategory::Financial,
+            IndicatorId::GovernmentBenefitLure => IndicatorCategory::Lure,
+            IndicatorId::FakeMarketplace => IndicatorCategory::ECommerce,
         }
     }
 
@@ -177,6 +189,10 @@ impl IndicatorId {
             IndicatorId::FreeGift,
             IndicatorId::FamilyEmergency,
             IndicatorId::TaxPenalty,
+            IndicatorId::Sextortion,
+            IndicatorId::RecoveryScam,
+            IndicatorId::GovernmentBenefitLure,
+            IndicatorId::FakeMarketplace,
         ]
     }
 
@@ -213,6 +229,10 @@ impl IndicatorId {
             IndicatorId::FreeGift => "Free Gift",
             IndicatorId::FamilyEmergency => "Family Emergency",
             IndicatorId::TaxPenalty => "Tax Penalty",
+            IndicatorId::Sextortion => "Sextortion",
+            IndicatorId::RecoveryScam => "Recovery Scam",
+            IndicatorId::GovernmentBenefitLure => "Government Benefit Lure",
+            IndicatorId::FakeMarketplace => "Fake Marketplace",
         }
     }
 
@@ -226,12 +246,16 @@ impl IndicatorId {
                     "urgent", "immediately", "asap", "act now", "right away",
                     "time-sensitive", "emergency", "without delay", "at once",
                     "don't wait", "hurry", "expires", "deadline",
+                    "within 24 hours", "within 48 hours", "last chance",
+                    "final notice", "action required", "response required",
                 ],
                 vi: &[
                     "khẩn cấp", "gấp lắm", "ngay lập tức", "gấp", "nhanh lên",
                     "trong vòng", "còn hạn", "sắp hết hạn", "mau chóng", "đừng chờ",
                     // Unaccented variants (common in SMS)
-                    "khan cap", "gap lam", "ngay lap tuc", "nap het han", "mau chung",
+                    "khan cap", "gap lam", "ngay lap tuc", "gap", "nhanh len",
+                    "nap het han", "mau chung", "dung cho",
+                    "trong vong", "con han", "sap het han",
                 ],
                 th: &[
                     "ด่วน", "เร่งด่วน", "ทันที", "ภายใน", "หมดเวลา",
@@ -258,46 +282,93 @@ impl IndicatorId {
             IndicatorId::FinancialRequest => IndicatorKeywords {
                 indicator: *self,
                 en: &[
-                    "send money", "transfer money", "wire money", "payment",
+                    "send money", "transfer money", "wire money",
                     "pay now", "send funds", "make a payment", "deposit",
                     "transfer funds", "send cash", "wire transfer",
+                    "pay a fee", "clearance fee", "customs fee", "processing fee",
+                    "release fee", "fee to release", "pay $", "pay to",
+                    "payment required", "outstanding balance", "overdue",
+                    "receive payments", "forward payments",
+                    // Loan/approval keywords
+                    "loan", "approved", "approval", "instant approval",
+                    "no collateral", "no guarantor", "easy loan", "fast loan",
+                    "cash loan", "personal loan", "credit approval",
+                    "loan approved", "pre-approved", "lulus", "pinjaman",
                 ],
                 vi: &[
                     "chuyển tiền", "gửi tiền", "thanh toán", "nạp tiền",
                     "chuyển khoản", "gửi ngay", "nộp tiền",
+                    "phí hải quan", "phí xử lý", "phí giải ngân",
+                    "thanh toán phí", "nộp phí",
+                    "phí hồ sơ", "phí đăng ký",
+                    // Loan keywords
+                    "vay", "khoản vay", "duyệt vay", "vay nhanh",
+                    "vay tín chấp", "vay không cần thế chấp",
+                    // Unaccented
+                    "chuyen tien", "gui tien", "thanh toan", "nap tien",
+                    "chuyen khoan", "gui ngay", "nop tien",
+                    "phi hai quan", "phi xu ly", "phi giai ngan",
+                    "thanh toan phi", "nop phi",
+                    "khoan vay", "duyet vay", "vay nhanh",
+                    "vay tin chap", "vay khong can the chap",
                 ],
                 th: &[
                     "โอนเงิน", "ส่งเงิน", "จ่ายเงิน", "โอนเงินเข้า",
                     "เก็บเงิน", "ชำระเงิน",
+                    // Loan keywords
+                    "สินเชื่อ", "อนุมัติ", "กู้เงิน", "สินเชื่อส่วนบุคคล",
+                    "อนุมัติเร็ว",
                 ],
                 id: &[
                     "kirim uang", "transfer uang", "bayar", "transfer dana",
                     "kirim dana", "pembayaran",
+                    // Loan keywords
+                    "pinjaman", "disetujui", "persetujuan", "tanpa agunan",
+                    "pinjaman cepat", "kredit",
                 ],
                 ms: &[
                     "hantar wang", "pindah wang", "bayar", "pindahan dana",
                     "bayaran", "kirim duit",
+                    // Loan keywords
+                    "pinjaman", "diluluskan", "kelulusan", "tanpa penjamin",
+                    "pinjaman cepat", "kredit",
                 ],
                 tl: &[
                     "magpadala ng pera", "bayad", "transfer", "padala",
                     "ipadala ang pera", "kabayaran",
+                    // Loan keywords
+                    "utang", "loan", "approved", "walang collateral",
+                    "payday loan",
                 ],
                 km: &[
                     "ផ្ញើប្រាក់", "ផ្ទេរប្រាក់", "បង់ប្រាក់", "បង់ថ្លៃ",
+                    // Loan keywords
+                    "ប្រាក់កម្ចី", "អនុម័ត", "ឥណទាន",
                 ],
-                zh: &["转账", "汇款", "付款", "打钱", "支付"],
+                zh: &["转账", "汇款", "付款", "打钱", "支付", "贷款", "批准", "无抵押", "快速放款"],
                 other: &[],
             },
             IndicatorId::CredentialRequest => IndicatorKeywords {
                 indicator: *self,
                 en: &[
-                    "password", "otp", "pin", "verification code", "passcode",
+                    "password", "otp", "verification code", "passcode",
                     "one-time password", "2fa code", "security code",
                     "enter your password", "confirm your password",
+                    "enter your pin", "forward the code", "send the code", "send the otp",
+                    "forward the otp", "share the code", "send us the code",
+                    "code you just received", "6-digit code",
+                    "share this code", "share the otp",
                 ],
                 vi: &[
                     "mật khẩu", "mã otp", "mã xác nhận", "mã bảo mật",
                     "nhập mật khẩu", "mã pin",
+                    "gửi mã", "forward mã", "mã 6 số",
+                    "xác thực", "chia sẻ mã",
+                    // Unaccented
+                    "mat khau", "ma otp", "ma xac nhan", "ma bao mat",
+                    "nhap mat khau", "ma pin",
+                    "gui ma", "forward ma", "ma 6 so",
+                    "xac thuc", "chia se ma",
                 ],
                 th: &[
                     "รหัสผ่าน", "รหัส otp", "รหัสยืนยัน", "รหัสลับ",
@@ -360,12 +431,18 @@ impl IndicatorId {
                     "dear customer", "dear user", "dear valued customer",
                     "your bank", "your account", "notice from",
                     "official notification", "important notice",
+                    "dear member", "valued member", "dear client",
+                    "important message", "account holder",
                 ],
                 vi: &[
                     "thân gửi khách hàng", "ngân hàng của bạn", "tài khoản của bạn",
                     "thông báo từ", "thông báo chính thức",
+                    "ngân hàng nhà nước", "vietcombank", "techcombank",
+                    "bidv", "mb bank", "agribank", "vietinbank",
+                    "acb", "tpbank", "vpbank",
                     // Unaccented variants
                     "ngan hang", "tai khoan cua ban", "thong bao",
+                    "ngan hang nha nuoc",
                 ],
                 th: &[
                     "เรียนลูกค้า", "ธนาคารของคุณ", "บัญชีของคุณ",
@@ -395,10 +472,31 @@ impl IndicatorId {
                     "guaranteed return", "risk-free", "high return",
                     "double your money", "passive income", "easy money",
                     "100% profit", "no risk", "guaranteed profit",
+                    "guaranteed 30%", "roi", "returns in", "profit guaranteed",
+                    "capital protection", "annual yield",
+                    "pre-ipo", "pre-ipo shares", "pool funds",
+                    "investment opportunity", "exclusive allocation",
+                    "high yield", "monthly return", "lãi suất cao",
+                    "investment club", "guaranteed 8%", "8% annual",
+                    "30% returns", "5x return", "lợi nhuận gấp",
+                    "annual returns", "consistent returns",
+                    "20% annual", "50% apy", "double your",
+                    "fund has delivered", "fund delivered",
+                    "ipo allocation", "serious investors",
+                    "exclusive ipo", "brokerage",
                 ],
                 vi: &[
                     "lợi nhuận đảm bảo", "không rủi ro", "thu nhập thụ động",
                     "tiền dễ kiếm", "lãi suất cao", "đảm bảo lợi nhuận",
+                    "cam kết", "lợi nhuận cam kết", "đầu tư vàng",
+                    "vốn tối thiểu", "chứng khoán", "đầu tư tiền ảo",
+                    "cơ hội đầu tư", "rút vốn linh hoạt", "lãi suất cố định",
+                    // Unaccented
+                    "cam ket", "loi nhuan cam ket", "dau tu vang",
+                    "von toi thieu", "chung khoan",
+                    "dau tu", "loi nhuan", "co phieu", "trai phieu",
+                    "lai suat cao", "lai suat co dinh", "rut von linh hoat",
+                    "co hoi dau tu", "dau tu tien ao",
                 ],
                 th: &[
                     "ผลตอบแทนรับประกัน", "ไม่มีความเสี่ยง", "รายได้เฉื่อย",
@@ -428,31 +526,67 @@ impl IndicatorId {
                     "this is the police", "from the government", "from the bank",
                     "official", "on behalf of", "this is microsoft",
                     "this is apple", "from the tax office",
+                    "calling from", "police department", "fraud department",
+                    "security team", "i'm from", "we are from",
+                    "investigation", "law enforcement",
+                    // Brand impersonation
+                    "apple security", "apple update", "google security",
+                    "microsoft security", "garena security", "steam security",
+                    "account security update", "security update",
+                    "subscription update", "your subscription",
+                    "confirm your subscription", "account suspended",
+                    "account deactivated", "account locked", "account blocked",
+                    "account compromised", "suspicious activity",
+                    "unauthorized access", "unusual activity",
                 ],
                 vi: &[
                     "công an", "chính phủ", "ngân hàng nhà nước",
                     "cơ quan chức năng", "đại diện", "tổng cục thuế",
+                    "cảnh sát", "điện lực", "cấp nước",
+                    "viễn thông", "tổng cục hải quan",
+                    // Unaccented
+                    "cong an", "chinh phu", "co quan chuc nang",
+                    "canh sat", "dien luc", "cap nuoc",
+                    "vien thong", "tong cuc hai quan",
+                    // Brand impersonation
+                    "bảo mật", "cập nhật bảo mật", "tài khoản bị khóa",
+                    "tài khoản bị đình chỉ", "hoạt động đáng ngờ",
                 ],
                 th: &[
                     "ตำรวจ", "รัฐบาล", "ธนาคารแห่งประเทศ",
                     "เจ้าหน้าที่", "ในนามของ", "กรมสรรพากร",
+                    // Brand impersonation
+                    "การรักษาความปลอดภัย", "อัปเดตความปลอดภัย",
+                    "บัญชีถูกระงับ", "บัญชีถูกล็อก", "กิจกรรมผิดปกติ",
                 ],
                 id: &[
                     "polisi", "pemerintah", "bank indonesia",
                     "pejabat resmi", "atas nama", "direktorat pajak",
+                    // Brand impersonation
+                    "keamanan", "pembaruan keamanan", "akun diblokir",
+                    "akun dinonaktifkan", "aktivitas mencurigakan",
                 ],
                 ms: &[
                     "polis", "kerajaan", "bank negara",
                     "pegawai rasmi", "atas nama", "lembaga hasil",
+                    // Brand impersonation
+                    "keselamatan", "kemas kini keselamatan", "akaun disekat",
+                    "akaun dinyahaktifkan", "aktiviti mencurigakan",
                 ],
                 tl: &[
                     "pulis", "gobyerno", "bangko",
                     "opisyal", "sa ngalan ng", "bureau of internal revenue",
+                    // Brand impersonation
+                    "seguridad", "update sa seguridad", "na-block ang account",
+                    "na-deactivate", "nakakahinuhang aktibidad",
                 ],
                 km: &[
                     "នគរបាល", "រដ្ឋាភិបាល", "ធនាគារជាតិ",
+                    // Brand impersonation
+                    "សន្តិសុខ", "ការអាប់ដេតសន្តិសុខ",
+                    "គណនីត្រូវបានចាក់សោ", "សកម្មភាពសង្ស័យ",
                 ],
-                zh: &["警察", "政府", "银行", "官方", "代表", "税务局"],
+                zh: &["警察", "政府", "银行", "官方", "代表", "税务局", "安全更新", "账户被锁", "账户被停用", "可疑活动"],
                 other: &[],
             },
             IndicatorId::ThreatLegal => IndicatorKeywords {
@@ -494,12 +628,19 @@ impl IndicatorId {
                     "account suspended", "account closed", "account deactivated",
                     "service terminated", "account locked", "will be blocked",
                     "permanently disabled", "account will be deleted",
+                    "unusual activity", "unauthorized access", "suspicious transaction",
+                    "unrecognized device", "suspicious activity", "suspended due to",
+                    "account has been suspended", "permanently locked",
+                    "will be suspended", "will be closed", "will be terminated",
+                    "account flagged", "suspicious login",
                 ],
                 vi: &[
                     "tài khoản bị khóa", "tài khoản bị đóng", "ngừng hoạt động",
                     "tài khoản bị chặn", "khóa vĩnh viễn",
                     // Unaccented variants
                     "tai khoan bi khoa", "tai khoan bi dong", "khoa vinh vien",
+                    "đăng nhập lạ", "giao dịch bất thường", "phát hiện bất thường",
+                    "tạm khóa", "bị đánh cắp",
                 ],
                 th: &[
                     "บัญชีถูกระงับ", "บัญชีถูกปิด", "ยกเลิกบริการ",
@@ -559,13 +700,23 @@ impl IndicatorId {
             IndicatorId::DeliveryLure => IndicatorKeywords {
                 indicator: *self,
                 en: &[
-                    "package", "delivery", "parcel", "shipment",
-                    "tracking", "reschedule delivery", "package held",
-                    "delivery failed", "courier",
+                    "reschedule delivery", "package held",
+                    "delivery failed", "delivery issue", "delivery problem",
+                    "shipping issue",
+                    "update your address", "address update", "held at customs",
+                    "customs fee", "clearance fee", "release your parcel",
+                    "delivery pending", "package waiting",
+                    "redelivery fee", "parcel held", "package held at",
+                    "delivery on hold", "shipment held",
                 ],
                 vi: &[
                     "gói hàng", "giao hàng", "kiện hàng", "theo dõi đơn hàng",
                     "lên lịch lại", "giao hàng thất bại",
+                    "phí hải quan", "kiện hàng bị giữ", "cập nhật địa chỉ",
+                    // Unaccented
+                    "goi hang", "giao hang", "kien hang", "theo doi don hang",
+                    "len lich lai", "giao hang that bai",
+                    "phi hai quan", "kien hang bi giu", "cap nhat dia chi",
                 ],
                 th: &[
                     "พัสดุ", "จัดส่ง", "พัสดุภาค", "ติดตามพัสดุ",
@@ -594,11 +745,18 @@ impl IndicatorId {
                 en: &[
                     "you've won", "congratulations", "winner", "prize",
                     "lottery", "sweepstakes", "lucky draw", "selected to win",
-                    "claim your prize",
+                    "claim your prize", "cashback reward", "claim at",
+                    "free credit", "redeem now", "trúng thưởng", "hoàn tiền",
+                    "you've accumulated enough", "claim your reward",
                 ],
                 vi: &[
                     "bạn đã thắng", "chúc mừng", "trúng thưởng", "xổ số",
                     "giải thưởng", "quay số trúng thưởng",
+                    "trúng giải", "nhận thưởng", "khuyến mãi",
+                    // Unaccented
+                    "ban da thang", "chuc mung", "trung thuong", "xo so",
+                    "giai thuong", "quay so trung thuong",
+                    "trung giai", "nhan thuong", "khuyen mai",
                 ],
                 th: &[
                     "คุณได้รับรางวัล", "ยินดีด้วย", "ถูกรางวัล", "ลอตเตอรี่",
@@ -628,10 +786,27 @@ impl IndicatorId {
                     "work from home", "easy job", "earn money", "part-time job",
                     "no experience needed", "high salary", "task completion",
                     "data entry", "click ads", "commission",
+                    "product reviewer", "mystery shopper",
+                    "flexible hours", "no formal requirements",
+                    "thu nhập", "CTV online", "việc làm tại nhà",
+                    "remote product", "hiring remote", "$200/review",
+                    "limited positions", "apply now",
+                    "recruiter", "opening for", "contract role",
+                    "data annotation", "admin assistant",
+                    "finance analyst", "digital marketing role",
+                    "great fit", "send your cv", "linkedin profile",
+                    "$3,500/month", "$8,000/month",
                 ],
                 vi: &[
                     "làm việc tại nhà", "việc làm dễ", "kiếm tiền",
                     "việc bán thời gian", "không cần kinh nghiệm",
+                    "CTV", "hoa hồng", "thu nhập",
+                    "xử lý đơn hàng", "khảo sát online",
+                    // Unaccented
+                    "lam viec tai nha", "viec lam de", "kiem tien",
+                    "viec ban thoi gian", "khong can kinh nghiem",
+                    "hoa hong", "thu nhap",
+                    "xu ly don hang", "khao sat online",
                 ],
                 th: &[
                     "ทำงานที่บ้าน", "งานง่าย", "หาเงิน", "งานพาร์ทไทม์",
@@ -665,6 +840,10 @@ impl IndicatorId {
                 vi: &[
                     "quyên góp", "từ thiện", "giúp nạn nhân", "cứu trợ",
                     "ủng hộ", "mỗi đồng đều quý",
+                    "đồng bào", "bão lũ", "lũ lụt",
+                    // Unaccented
+                    "quyen gop", "tu thien", "giup nan nhan", "cuu tro",
+                    "ung ho", "dong bao", "bao lu", "lu lut",
                 ],
                 th: &[
                     "บริจาค", "การกุศล", "ช่วยเหลือผู้ประสบภัย", "บรรเทาทุกข์",
@@ -738,15 +917,15 @@ impl IndicatorId {
                 ],
                 id: &[
                     "kartu hadiah", "steam card", "google play card",
-                    "itunes card", "voucher",
+                    "itunes card", "beli kartu hadiah",
                 ],
                 ms: &[
                     "kad hadiah", "steam card", "google play card",
-                    "itunes card", "voucher",
+                    "itunes card", "beli kad hadiah",
                 ],
                 tl: &[
                     "gift card", "steam card", "google play",
-                    "itunes card", "voucher",
+                    "itunes card", "buy gift card",
                 ],
                 km: &[
                     "កាតអំណោយ", "កាត steam", "google play",
@@ -757,7 +936,7 @@ impl IndicatorId {
             IndicatorId::LinkSuspicious => IndicatorKeywords {
                 indicator: *self,
                 en: &[
-                    "bit.ly", "tinyurl", "t.co", "shorte.st", "cutt.ly",
+                    "bit.ly", "tinyurl", "shorte.st", "cutt.ly",
                     "click here", "visit this link", "check this out",
                 ],
                 vi: &[
@@ -856,9 +1035,9 @@ impl IndicatorId {
             IndicatorId::BankTransfer => IndicatorKeywords {
                 indicator: *self,
                 en: &[
-                    "bank account", "account number", "routing number",
-                    "swift code", "iban", "transfer to this account",
-                    "wire to", "account details",
+                    "transfer to this account", "wire to", "account details",
+                    "send to this account", "deposit to", "transfer funds to",
+                    "chuyển vào số", "chuyển đến số",
                 ],
                 vi: &[
                     "số tài khoản", "chuyển vào tài khoản",
@@ -893,35 +1072,61 @@ impl IndicatorId {
                     "verify your account", "confirm your account",
                     "update your information", "validate your details",
                     "complete verification",
+                    "verify now", "secure your account", "re-verify",
+                    "update your details", "confirm your details",
+                    "verify at", "confirm at", "secure at",
+                    "update your payment", "update billing", "update your card",
+                    "confirm your information", "verify your details",
+                    // Reactivation keywords
+                    "reactivate", "reactivation", "reactivate now",
+                    "reactivate your", "activate your", "activation required",
+                    "re-activate", "restore access", "regain access",
+                    "unlock your", "unblock your",
                 ],
                 vi: &[
                     "xác minh danh tính", "xác nhận tài khoản",
                     "cập nhật thông tin", "xác thực",
+                    "xác minh otp", "xác minh số điện thoại",
+                    "bảo mật tài khoản", "xác nhận ngay",
                     // Unaccented variants
                     "xac minh danh tinh", "xac nhan tai khoan",
                     "cap nhat thong tin", "xac thuc",
+                    "bao mat tai khoan", "xac nhan ngay",
+                    // Reactivation
+                    "kích hoạt lại", "mở khóa lại", "kích hoạt",
+                    "mở khóa tài khoản",
                 ],
                 th: &[
                     "ยืนยันตัวตน", "ยืนยันบัญชี",
                     "อัปเดตข้อมูล", "ตรวจสอบ",
+                    // Reactivation
+                    "เปิดใช้งานอีกครั้ง", "ปลดล็อก", "เปิดบัญชี",
                 ],
                 id: &[
                     "verifikasi identitas", "konfirmasi akun",
                     "perbarui informasi", "verifikasi",
+                    // Reactivation
+                    "aktivasi", "aktifkan", "aktifkan kembali", "buka blokir",
                 ],
                 ms: &[
                     "sahkan identiti", "sahkan akaun",
                     "kemas kini maklumat", "pengesahan",
+                    // Reactivation
+                    "aktifkan", "aktif semula", "buka sekatan",
                 ],
                 tl: &[
                     "verify identity", "confirm account",
                     "update information", "verify",
+                    // Reactivation
+                    "aktibuhin", "reactivate", "activate", "buksan",
                 ],
                 km: &[
                     "ផ្ទៀងផ្ទាត់អត្តសញ្ញាណ", "បញ្ជាក់គណនី",
                     "ធ្វើបច្ចុប្បន្នភាពព័ត៌មាន",
+                    // Reactivation
+                    "បើកដំណើរការឡើងវិញ", "ដោះសោ",
                 ],
-                zh: &["验证身份", "确认账户", "更新信息", "实名认证"],
+                zh: &["验证身份", "确认账户", "更新信息", "实名认证", "重新激活", "解锁", "恢复"],
                 other: &[],
             },
             IndicatorId::LimitedTimeOffer => IndicatorKeywords {
@@ -1031,31 +1236,225 @@ impl IndicatorId {
                     "tax penalty", "unpaid taxes", "tax evasion",
                     "irs", "tax authority", "outstanding tax",
                     "tax refund", "property tax",
+                    // Toll/fine/penalty keywords
+                    "toll", "toll fee", "toll fine", "unpaid toll",
+                    "road toll", "erp", "electronic road pricing",
+                    "summons", "traffic fine", "traffic summons",
+                    "compound", "penalty fee", "violation", "overdue fine",
+                    // Customs/duty keywords
+                    "customs fee", "customs duty", "clearance fee",
+                    "import duty", "customs charge", "customs payment",
+                    "duty fee", "customs clearance",
                 ],
                 vi: &[
                     "thuế", "nợ thuế", "trốn thuế",
                     "cơ quan thuế", "thuế quá hạn", "hoàn thuế",
+                    // Toll/fine/penalty
+                    "phí cầu đường", "phí thông hành", "phạt nguội",
+                    "tiền phạt", "vi phạm giao thông", "trọng tài",
+                    // Customs/duty
+                    "phí hải quan", "thuế nhập khẩu", "phí thông quan",
                 ],
                 th: &[
                     "ภาษี", "ภาษีค้างชำระ", "หนีภาษี",
                     "กรมสรรพากร", "ภาษีเกินกำหนด", "คืนภาษี",
+                    // Toll/fine/penalty
+                    "ค่าผ่านทาง", "ค่าทางด่วน", "ใบสั่ง",
+                    "ค่าปรับ", "จราจร",
+                    // Customs/duty
+                    "ค่าภาษีศุลกากร", "ค่าธรรมเนียมศุลกากร", "ภาษีนำเข้า",
                 ],
                 id: &[
                     "pajak", "pajak tertunggak", "menghindar pajak",
                     "otoritas pajak", "pajak terlambat", "pengembalian pajak",
+                    // Toll/fine/penalty
+                    "tol", "denda tilang", "pelanggaran", "tilang", "denda",
+                    // Customs/duty
+                    "biaya bea cukai", "pajak impor", "bea masuk",
                 ],
                 ms: &[
                     "cukai", "cukai tertunggak", "mengelak cukai",
                     "lembaga hasil", "cukai lewat", "bayaran balik cukai",
+                    // Toll/fine/penalty
+                    "tol", "saman", "denda", "kompaun", "trafik",
+                    // Customs/duty
+                    "fi kastam", "cukai import", "kastam",
                 ],
                 tl: &[
                     "buhis", "unpaid tax", "tax evasion",
                     "tax authority", "tax refund",
+                    // Toll/fine/penalty
+                    "tol", "multa", "violation", "fine", "summons",
+                    // Customs/duty
+                    "customs", "duty", "buwis", "adwana",
                 ],
                 km: &[
                     "ពន្ធ", "ពន្ធដែកសង", "គេចពន្ធ",
+                    // Toll/fine/penalty
+                    "ថ្លៃស្ពាន", "ការពិន័យ", "បទល្មើស",
+                    // Customs/duty
+                    "ពន្ធគយ", "ការគយ",
                 ],
-                zh: &["税务", "欠税", "逃税", "税务局", "退税"],
+                zh: &["税务", "欠税", "逃税", "税务局", "退税", "过路费", "罚款", "违章", "通行费", "海关费", "关税", "清关费"],
+                other: &[],
+            },
+            IndicatorId::Sextortion => IndicatorKeywords {
+                indicator: *self,
+                en: &[
+                    "sensitive video", "camera footage", "sensitive photos",
+                    "we have your video", "recorded you", "webcam",
+                    "explicit content", "camera access", "front camera",
+                    "recorded through your camera", "hacked your camera",
+                    "private video of you", "nude photos",
+                    // Additional sextortion variants
+                    "unseen photos", "private photos", "leaked photos",
+                    "leaked video", "expose you", "public exposure",
+                    "publish your", "share your video", "send to your contacts",
+                    "send to your friends", "your contacts", "your friends will see",
+                    "your family will see", "browsing history", "private messages",
+                    "chat history", "webcam footage",
+                ],
+                vi: &[
+                    "video nhạy cảm", "camera", "quay lén",
+                    "hình ảnh nhạy cảm", "đã quay bạn",
+                    // Unaccented
+                    "video nhay cam", "hinh anh nhay cam", "da quay ban",
+                    // Additional
+                    "ảnh nhạy cảm", "video nhạy cảm", "rò rỉ",
+                    "đăng lên mạng", "gửi cho người thân",
+                ],
+                th: &[
+                    "วิดีโอละเอียดอ่อน", "กล้อง", "ถ่ายลับ",
+                    // Additional
+                    "รูปส่วนตัว", "วิดีโอลับ", "เผยแพร่", "ส่งให้เพื่อน",
+                ],
+                id: &[
+                    "video sensitif", "kamera", "rekaman rahasia",
+                    // Additional
+                    "foto pribadi", "video pribadi", "bocor", "sebarkan",
+                    "kirim ke kontak",
+                ],
+                ms: &[
+                    "video sensitif", "kamera", "rakaman sulit",
+                    // Additional
+                    "foto peribadi", "video peribadi", "bocor", "sebarkan",
+                    "hantar ke kontak",
+                ],
+                tl: &[
+                    "sensitive video", "camera", "hidden cam",
+                    // Additional
+                    "pribadong larawan", "private video", "ikalat",
+                    "ipadala sa kontak",
+                ],
+                km: &[
+                    "វីដេអូរំភើប", "កាមេរ៉ា",
+                    // Additional
+                    "រូបភាពឯកជន", "វីដេអូឯកជន", "ផ្សព្វផ្សាយ",
+                ],
+                zh: &["敏感视频", "摄像头", "偷拍", "私密照片", "泄露视频", "发给你联系人"],
+                other: &[],
+            },
+            IndicatorId::RecoveryScam => IndicatorKeywords {
+                indicator: *self,
+                en: &[
+                    "recovery team", "refund team", "get your money back",
+                    "victim of scam", "help you recover", "reclaim your funds",
+                    "we can help you get back", "lost funds recovery",
+                    "asset recovery", "funds recovery service",
+                    "have you been scammed", "recover your losses",
+                    "tracing your stolen funds",
+                ],
+                vi: &[
+                    "truy thu", "hoàn tiền", "bị lừa đảo",
+                    "thu hồi tiền", "đòi lại tiền",
+                    // Unaccented
+                    "truy thu", "hoan tien", "bi lua dao", "thu hoi tien",
+                ],
+                th: &[
+                    "ทีมกู้คืน", "คืนเงิน", "ถูกหลอกลวง",
+                ],
+                id: &[
+                    "tim pemulihan", "pengembalian dana", "korban penipuan",
+                ],
+                ms: &[
+                    "pasukan pemulihan", "pulih dana", "mangsa penipuan",
+                ],
+                tl: &[
+                    "recovery team", "refund", "na-scam",
+                ],
+                km: &[
+                    "ក្រុមការពារ", "ប្រាក់ត្រឡប់",
+                ],
+                zh: &["追回", "退款团队", "被骗", "资金回收"],
+                other: &[],
+            },
+            IndicatorId::GovernmentBenefitLure => IndicatorKeywords {
+                indicator: *self,
+                en: &[
+                    "you qualify for", "pre-approved for grant",
+                    "assistance scheme", "comcare assistance",
+                    "enhanced housing grant", "government payout",
+                    "you are eligible for", "subsidy", "relief fund",
+                    "government assistance", "financial aid",
+                    "gst voucher", "payout to you", "cash payout",
+                    "support payment", "cost of living",
+                ],
+                vi: &[
+                    "bạn đủ điều kiện", "trợ cấp", "hỗ trợ chính phủ",
+                    "bhxh", "an sinh xã hội", "trợ cấp thất nghiệp",
+                    "bộ lđtbxh", "gói an sinh", "nhận trợ cấp",
+                    // Unaccented
+                    "ban du dieu kien", "tro cap", "ho tro chinh phu",
+                    "an sinh xa hoi", "tro cap that nghiep",
+                    "bo ldtbxh", "goi an sinh", "nhan tro cap",
+                ],
+                th: &[
+                    "คุณมีสิทธิ์", "เงินช่วยเหลือ", "เงินอุดหนุน",
+                ],
+                id: &[
+                    "anda memenuhi syarat", "bantuan", "subsidi",
+                ],
+                ms: &[
+                    "anda layak", "bantuan", "subsidi",
+                ],
+                tl: &[
+                    "you qualify", "assistance", "subsidy",
+                ],
+                km: &[
+                    "អ្នកមានសិទ្ធិ", "ជំនួយ",
+                ],
+                zh: &["你有资格", "政府补助", "补贴"],
+                other: &[],
+            },
+            IndicatorId::FakeMarketplace => IndicatorKeywords {
+                indicator: *self,
+                en: &[
+                    "brand new sealed", "retail price", "limited stock",
+                    "brand new in box", "unopened", "factory sealed",
+                    "below retail", "below cost", "wholesale price",
+                    "authentic guaranteed", "original brand",
+                ],
+                vi: &[
+                    "hàng mới nguyên hộp", "giá sỉ", "còn ít hàng",
+                    // Unaccented
+                    "hang moi nguyen hop", "gia si", "con it hang",
+                ],
+                th: &[
+                    "ของใหม่ในกล่อง", "ราคาส่ง", "สต็อกจำกัด",
+                ],
+                id: &[
+                    "baru segel", "harga grosir", "stok terbatas",
+                ],
+                ms: &[
+                    "baru tersegel", "harga borong", "stok terhad",
+                ],
+                tl: &[
+                    "brand new sealed", "wholesale", "limited stock",
+                ],
+                km: &[
+                    "ថ្មីក្នុងប្រអប់", "តម្លៃរាយ",
+                ],
+                zh: &["全新未拆", "批发价", "库存有限"],
                 other: &[],
             },
         }
@@ -1069,7 +1468,8 @@ impl IndicatorId {
             IndicatorId::CredentialRequest
                 | IndicatorId::RemoteAccess
                 | IndicatorId::BankTransfer
-                | IndicatorId::GiftCard
+                | IndicatorId::Sextortion
+                | IndicatorId::RecoveryScam
         )
     }
 
@@ -1102,6 +1502,10 @@ impl IndicatorId {
             IndicatorId::FreeGift => "The message offers free gifts or trials with no obligation, a common lure to collect personal information.",
             IndicatorId::FamilyEmergency => "The message claims a family member is in trouble and needs money urgently. Always verify through another channel.",
             IndicatorId::TaxPenalty => "The message claims you have unpaid taxes or penalties and threatens consequences if you don't pay immediately.",
+            IndicatorId::Sextortion => "The message claims to have sensitive or explicit photos/videos of you and threatens to release them unless you pay.",
+            IndicatorId::RecoveryScam => "The message claims to be from a recovery service that can help you get back money you lost to a previous scam — this is itself a scam.",
+            IndicatorId::GovernmentBenefitLure => "The message claims you qualify for a government grant, assistance scheme, or payout that you never applied for.",
+            IndicatorId::FakeMarketplace => "The message offers branded products at suspiciously low prices with claims of being brand new and sealed, a common marketplace scam.",
         }
     }
 
@@ -1134,6 +1538,10 @@ impl IndicatorId {
             IndicatorId::LimitedTimeOffer => 23,
             IndicatorId::FreeGift => 24,
             IndicatorId::TaxPenalty => 25,
+            IndicatorId::Sextortion => 5,
+            IndicatorId::RecoveryScam => 10,
+            IndicatorId::GovernmentBenefitLure => 20,
+            IndicatorId::FakeMarketplace => 22,
         }
     }
 }
@@ -1224,4 +1632,4 @@ impl IndicatorHit {
 }
 
 /// Ontology version identifier.
-pub const ONTOLOGY_VERSION: &str = "1.0.0";
+pub const ONTOLOGY_VERSION: &str = "1.1.0";

@@ -4,7 +4,7 @@ use crate::ontology::{IndicatorId, IndicatorStrength, IndicatorCategory};
 
 #[test]
 fn test_indicator_count() {
-    assert_eq!(IndicatorId::all().len(), 25, "Should have exactly 25 indicators");
+    assert_eq!(IndicatorId::all().len(), 29, "Should have exactly 29 indicators");
 }
 
 #[test]
@@ -28,10 +28,11 @@ fn test_high_value_indicators() {
     assert!(IndicatorId::CredentialRequest.is_high_value());
     assert!(IndicatorId::RemoteAccess.is_high_value());
     assert!(IndicatorId::BankTransfer.is_high_value());
-    assert!(IndicatorId::GiftCard.is_high_value());
+    assert!(IndicatorId::Sextortion.is_high_value());
 
     assert!(!IndicatorId::Urgency.is_high_value());
     assert!(!IndicatorId::PrizeLure.is_high_value());
+    assert!(!IndicatorId::GiftCard.is_high_value());
 }
 
 #[test]

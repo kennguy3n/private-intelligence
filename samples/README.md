@@ -2,6 +2,7 @@
 
 Four standalone demonstrations showing how to integrate [zk-ai](../README.md) into
 different product contexts. Each sample runs independently — just `cargo run -p <name>`.
+KinShield demos are now bundled in [`crates/kinshield`](../crates/kinshield/README.md).
 
 All inference runs **on-device**. No network calls, no API keys, no per-token costs.
 
@@ -11,7 +12,6 @@ All inference runs **on-device**. No network calls, no API keys, no per-token co
 |--------|---------|-------------|
 | **KChat B2C** | `kchat-b2c` | Consumer chat app — email summaries, smart replies, meeting summaries, notification digests, daily digests, pre-send checks |
 | **KChat B2B** | `kchat-b2b` | Enterprise chat app — contract analysis, document comparison, ticket intelligence, compliance, meeting minutes, collaboration summaries |
-| **KinShield** | `kinshield-scam-demo` | Scam detection — multi-channel (SMS, email, messaging, browser, call) scam detection with 25-indicator ontology, 15 SEA scam types, family construct with guardian alerts, privacy-bounded decision traces, on-device calibration, structured feedback, audit logs, PII detection, policy engine |
 | **KinSense** | `kinsense` | Family safety — activity classification, anomaly detection, SOS urgency, smart replies, daily safety digest, PII redaction, policy engine, location recognition, audit trail, ZK attestation |
 
 ## Quick Start
@@ -22,11 +22,10 @@ All inference runs **on-device**. No network calls, no API keys, no per-token co
 # Run any sample individually
 cargo run -p kchat-b2c
 cargo run -p kchat-b2b
-cargo run -p kinshield-scam-demo
 cargo run -p kinsense
 
 # Build all samples
-cargo build -p kchat-b2c -p kchat-b2b -p kinshield-scam-demo -p kinsense
+cargo build -p kchat-b2c -p kchat-b2b -p kinsense
 ```
 
 ## Architecture
@@ -40,10 +39,6 @@ samples/
 │   ├── README.md
 │   └── src/main.rs
 ├── kchat-b2b/          # Enterprise chat demo
-│   ├── Cargo.toml
-│   ├── README.md
-│   └── src/main.rs
-├── kinshield-scam-demo/  # Scam detection demo
 │   ├── Cargo.toml
 │   ├── README.md
 │   └── src/main.rs
@@ -73,11 +68,6 @@ Each sample:
 `ticket_summary`, `classify_urgency`, `ticket_reply`, `email_categorize`,
 `sentiment`, `meeting_minutes`, `extract_decisions`, `follow_up`,
 `collab_summary`, `auto_abstract`
-
-### KinShield
-`detect_pii`, `redact`, `AuditLog`, `PolicyEngine`, `PolicyDecision`,
-`detect_pii`, `run_embedding`, `keyword_match`, `count_keyword_matches`,
-`ZkAttestation`, `NetworkMonitor`, `ResidencyCertificate`, `verify_file`
 
 ### KinSense
 `auto_tag`, `find_similar`, `cluster`, `rerank`, `classify_urgency`,

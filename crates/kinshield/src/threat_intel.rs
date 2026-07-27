@@ -65,6 +65,20 @@ pub struct ScamCampaign {
     pub status: CampaignStatus,
     /// Human-readable description.
     pub description: String,
+    /// Pre-lowercased keywords for efficient matching.
+    #[serde(skip)]
+    pub keywords_lower: Vec<String>,
+    /// Pre-lowercased URL patterns for efficient matching.
+    #[serde(skip)]
+    pub url_patterns_lower: Vec<String>,
+}
+
+impl ScamCampaign {
+    /// Pre-compute lowercase versions of keywords and URL patterns.
+    fn precompute_lower(&mut self) {
+        self.keywords_lower = self.keywords.iter().map(|k| k.to_lowercase()).collect();
+        self.url_patterns_lower = self.url_patterns.iter().map(|p| p.to_lowercase()).collect();
+    }
 }
 
 /// Threat intelligence feed containing multiple campaigns.
@@ -99,7 +113,11 @@ impl ThreatIntelFeed {
 
     /// Ingest a JSON feed from an external source.
     pub fn from_json(json: &str) -> Result<Self, serde_json::Error> {
-        serde_json::from_str(json)
+        let mut feed: ThreatIntelFeed = serde_json::from_str(json)?;
+        for campaign in &mut feed.campaigns {
+            campaign.precompute_lower();
+        }
+        Ok(feed)
     }
 
     /// Serialize to JSON for storage.
@@ -114,10 +132,14 @@ impl ThreatIntelFeed {
             if let Some(existing) = self.campaigns.iter_mut().find(|c| c.campaign_id == campaign.campaign_id) {
                 // Replace if the other feed has a more recent last_seen
                 if campaign.last_seen > existing.last_seen {
-                    *existing = campaign.clone();
+                    let mut new_campaign = campaign.clone();
+                    new_campaign.precompute_lower();
+                    *existing = new_campaign;
                 }
             } else {
-                self.campaigns.push(campaign.clone());
+                let mut new_campaign = campaign.clone();
+                new_campaign.precompute_lower();
+                self.campaigns.push(new_campaign);
             }
         }
         if other.last_updated > self.last_updated {
@@ -149,14 +171,14 @@ impl ThreatIntelFeed {
                     return false;
                 }
 
-                // Keyword match
-                let keyword_match = c.keywords.iter().any(|k| {
-                    text_lower.contains(&k.to_lowercase())
+                // Keyword match (using pre-lowercased cache)
+                let keyword_match = c.keywords_lower.iter().any(|k| {
+                    text_lower.contains(k.as_str())
                 });
 
-                // URL pattern match
-                let url_match = c.url_patterns.iter().any(|p| {
-                    text_lower.contains(&p.to_lowercase())
+                // URL pattern match (using pre-lowercased cache)
+                let url_match = c.url_patterns_lower.iter().any(|p| {
+                    text_lower.contains(p.as_str())
                 });
 
                 keyword_match || url_match
@@ -195,7 +217,8 @@ impl ThreatIntelFeed {
     }
 
     /// Add a campaign to the feed.
-    pub fn add_campaign(&mut self, campaign: ScamCampaign) {
+    pub fn add_campaign(&mut self, mut campaign: ScamCampaign) {
+        campaign.precompute_lower();
         self.campaigns.push(campaign);
         self.last_updated = chrono::Utc::now().to_rfc3339();
     }
@@ -229,7 +252,7 @@ mod tests {
     use super::*;
 
     fn make_campaign() -> ScamCampaign {
-        ScamCampaign {
+        let mut c = ScamCampaign {
             campaign_id: "vn_bank_2024_01".to_string(),
             scam_type: ScamType::BankImpersonation,
             indicators: vec![IndicatorId::Urgency, IndicatorId::CredentialRequest],
@@ -242,7 +265,11 @@ mod tests {
             url_patterns: vec!["vcb-verify.com".to_string()],
             status: CampaignStatus::Active,
             description: "Vietcombank impersonation campaign targeting Vietnamese users".to_string(),
-        }
+            keywords_lower: Vec::new(),
+            url_patterns_lower: Vec::new(),
+        };
+        c.precompute_lower();
+        c
     }
 
     #[test]
@@ -265,6 +292,8 @@ mod tests {
             url_patterns: vec!["th-post.co".to_string()],
             status: CampaignStatus::Active,
             description: "Thailand delivery scam campaign".to_string(),
+            keywords_lower: Vec::new(),
+            url_patterns_lower: Vec::new(),
         });
 
         feed1.merge(&feed2);
@@ -345,6 +374,8 @@ mod tests {
             url_patterns: vec![],
             status: CampaignStatus::Resolved,
             description: "Old lottery scam".to_string(),
+            keywords_lower: Vec::new(),
+            url_patterns_lower: Vec::new(),
         });
 
         assert_eq!(feed.len(), 2);

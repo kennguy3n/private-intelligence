@@ -5,6 +5,7 @@ pub mod keyword;
 pub mod embedding;
 pub mod url;
 pub mod scoring;
+pub mod heuristics;
 
 use serde::{Deserialize, Serialize};
 use crate::channel::Channel;

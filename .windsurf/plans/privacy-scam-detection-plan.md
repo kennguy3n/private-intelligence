@@ -376,7 +376,7 @@ tests/test_data/
 - `crates/kinshield/src/detection/mod.rs` — add indicator explanations to DetectionResult
 - `crates/kinshield/src/report_missed.rs` — add weekly limit check
 - `crates/kinshield/src/tests/detection_tests.rs` — update for new types
-- `samples/kinshield-scam-demo/src/main.rs` — update demo with new features
+- `crates/kinshield/src/bin/kinshield-scam-demo.rs` — update demo with new features
 
 ### Files to Create
 - `crates/kinshield/src/counter_tables.rs` — persistent counter tables

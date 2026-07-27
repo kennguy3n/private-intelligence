@@ -11,6 +11,22 @@ description = "On-device scam risk detection and prevention with family-construc
 name = "kinshield"
 path = "src/lib.rs"
 
+[[bin]]
+name = "kinshield-scam-demo"
+path = "src/bin/kinshield-scam-demo.rs"
+
+[[bin]]
+name = "kinshield-eval"
+path = "src/bin/kinshield-eval.rs"
+
+[[bin]]
+name = "kinshield-privacy-demo"
+path = "src/bin/kinshield-privacy-demo.rs"
+
+[[bin]]
+name = "debug-embed"
+path = "src/bin/debug-embed.rs"
+
 [dependencies]
 zk-ai-core = { path = "../core" }
 serde = { workspace = true }
@@ -18,4 +34,7 @@ serde_json = { workspace = true }
 chrono = { workspace = true }
 uuid = { workspace = true }
 tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
 regex-lite = { workspace = true }
+tokio = { workspace = true }
+csv = "1.3"
