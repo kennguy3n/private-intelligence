@@ -151,6 +151,23 @@ pub const ALLOWED_DOMAINS: &[&str] = &[
     "steampowered.com", "steamcommunity.com", "valvesoftware.com",
     "riotgames.com", "dhl.com", "fedex.com", "ups.com",
     "binance.com", "binance.vn",
+    // Additional legitimate domains
+    "fpt.vn", "fpt.com", "fpt.com.vn",
+    "baohiemxahoi.gov.vn", "bhxh.gov.vn",
+    "notarise.gov.sg", "skillsfuture.gov.sg", "skillsfuture.sg",
+    "best-inc.com", "best-inc.vn",
+    "tigerbrokers.com",
+    "vnpt.com.vn", "vietnamobile.com.vn",
+    "paypal.com", "stripe.com", "wise.com",
+    "tcbs.com.vn", "vndirect.com.vn", "ssi.com.vn",
+    "hsc.com.vn", "vps.com.vn", "dnse.com.vn",
+    "kbnn.gov.vn", "vnid.vn", "dichvucong.gov.vn",
+    "mi.com", "xiaomi.com",
+    "dell.com", "asus.com", "acer.com", "lenovo.com", "hp.com",
+    "people.com.sg", "pa.gov.sg",
+    "tigerbrokers.com", "tigerbrokers.com.sg",
+    "spx.co", "spx.vn",
+    "ninjavan.co", "ninjavan.com",
 ];
 
 /// Check if a domain is in the allowlist.
@@ -239,8 +256,18 @@ pub fn is_security_notification(lower: &str) -> bool {
         || lower.contains("hindi i-share") || lower.contains("wag i-share")
         || lower.contains("កានតែមិនដែលសុំ");
 
-    // OTP delivery with "do not share" is almost always legitimate
-    if has_otp && has_dont_share {
+    // "Contact us at" an email or phone number is a phishing pattern,
+    // not a legitimate OTP delivery. Legitimate OTP messages just deliver
+    // the code without asking the user to contact anyone.
+    let has_contact_request = lower.contains("contact us at")
+        || lower.contains("contact us immediately")
+        || lower.contains("call us at")
+        || lower.contains("call immediately")
+        || lower.contains("reply to this number");
+
+    // OTP delivery with "do not share" is almost always legitimate,
+    // UNLESS it asks the user to contact someone (phishing pattern)
+    if has_otp && has_dont_share && !has_contact_request {
         return true;
     }
 
@@ -283,11 +310,20 @@ pub fn is_transaction_notification(lower: &str) -> bool {
         || lower.contains("giao dịch thành công")
         || lower.contains("thanh toán thành công")
         || lower.contains("chuyển khoản thành công")
-        || lower.contains("đã được")
+        // Vietnamese — "đã được" alone is too broad (means "has been"),
+        // so require it to be followed by a transaction-related word
+        || lower.contains("đã được xử lý")
+        || lower.contains("đã được ghi nhận")
+        || lower.contains("đã được duyệt")
+        || lower.contains("đã được hoàn thành")
+        || lower.contains("đã được chuyển")
+        || lower.contains("đã được kích hoạt")
         || lower.contains("đã chuyển")
         || lower.contains("đã thanh toán")
         || lower.contains("đã chuyển khoản")
-        || lower.contains("thành công")
+        // "thành công" alone is too broad — require transaction context
+        || (lower.contains("thành công") && (lower.contains("giao dịch")
+            || lower.contains("thanh toán") || lower.contains("chuyển khoản")))
         // Indonesian
         || lower.contains("transaksi berhasil")
         || lower.contains("pembayaran berhasil")
@@ -449,7 +485,9 @@ pub fn is_delivery_notification(lower: &str) -> bool {
         || lower.contains("sicepat") || lower.contains("dhl") || lower.contains("fedex")
         || lower.contains("ups") || lower.contains("singpost") || lower.contains("vnpost")
         || lower.contains("thailand post") || lower.contains("pos malaysia")
-        || lower.contains("lbc") || lower.contains("winmart");
+        || lower.contains("lbc") || lower.contains("winmart")
+        || lower.contains("best express") || lower.contains("best-inc")
+        || lower.contains("spx express") || lower.contains("spx");
 
     let has_customs = lower.contains("customs") || lower.contains("hải quan")
         || lower.contains("hai quan");
@@ -459,6 +497,14 @@ pub fn is_delivery_notification(lower: &str) -> bool {
         || lower.contains("đơn hàng") || lower.contains("don hang")
         || lower.contains("paket") || lower.contains("พัสดุ");
 
+    let has_delivery_failure = lower.contains("could not be delivered")
+        || lower.contains("giao không thành công")
+        || lower.contains("không thành công")
+        || lower.contains("delivery failed")
+        || lower.contains("giao hàng không thành công")
+        || lower.contains("đặt lại lịch")
+        || lower.contains("reschedule");
+
     // Customs fee from known delivery brand
     (has_delivery_brand && has_customs && has_delivery)
     // Package damage notification from known delivery brand
@@ -467,6 +513,8 @@ pub fn is_delivery_notification(lower: &str) -> bool {
     // Shipping fee notification from known delivery brand
     || (has_delivery_brand && (lower.contains("vận chuyển") || lower.contains("van chuyen")
         || lower.contains("shipping") || lower.contains("delivery fee")))
+    // Delivery failure / reschedule notification from known delivery brand
+    || (has_delivery_brand && has_delivery && has_delivery_failure)
 }
 
 /// Patterns that indicate a legitimate refund/cashback notification.

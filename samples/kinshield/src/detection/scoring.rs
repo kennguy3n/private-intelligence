@@ -34,6 +34,16 @@ pub fn compute_risk_bucket(
         .map(|h| h.strength.weight())
         .sum();
 
+    if std::env::var("DEBUG_SCORE").is_ok() && text.to_lowercase().contains("sim swap") {
+        eprintln!("DEBUG SCORE: base_score={base_score} indicators={:?}", indicators);
+    }
+    if std::env::var("DEBUG_SCORE").is_ok() && text.to_lowercase().contains("security code is being requested") {
+        eprintln!("DEBUG SCORE (row29): base_score={base_score} indicators={:?}", indicators);
+    }
+    if std::env::var("DEBUG_SCORE").is_ok() && text.to_lowercase().contains("thu nhập siêu") {
+        eprintln!("DEBUG SCORE (row704): base_score={base_score} indicators={:?}", indicators);
+    }
+
     // Convert to initial bucket (1-5)
     // Tuned for better sensitivity: single Medium indicator should reach bucket 2,
     // single High should reach bucket 3, two Mediums should reach bucket 3.
@@ -46,6 +56,12 @@ pub fn compute_risk_bucket(
     };
 
     // 2. Interaction bonuses
+    if std::env::var("DEBUG_SCORE").is_ok() && text.to_lowercase().contains("sim swap") {
+        eprintln!("DEBUG SCORE: initial_bucket={bucket}");
+    }
+    if std::env::var("DEBUG_SCORE").is_ok() && text.to_lowercase().contains("security code is being requested") {
+        eprintln!("DEBUG SCORE (row29): initial_bucket={bucket}");
+    }
     let has = |id: IndicatorId| -> Option<&IndicatorHit> {
         indicators.iter().find(|h| h.id == id)
     };
@@ -226,14 +242,43 @@ pub fn compute_risk_bucket(
 
     let legit = allowlist::analyze_legitimacy(&lower, has_urls, all_urls_ok);
 
+    // Check for suspicious URLs early — used to guard legitimacy reductions.
+    // When suspicious URLs are present, brand tags and notification patterns
+    // are likely impersonated, so we limit legitimacy reduction.
+    let has_suspicious_url = has(IndicatorId::LinkSuspicious).is_some();
+
     // Also count legacy legitimacy signals for backward compatibility
     let legacy_legit_hits = count_legitimacy_signals(&lower);
     let total_legit_signals = legit.signal_count + legacy_legit_hits;
 
+    if std::env::var("DEBUG_SCORE").is_ok() && text.to_lowercase().contains("sim swap") {
+        eprintln!("DEBUG SCORE: before_legit bucket={bucket} total_legit_signals={total_legit_signals} has_suspicious_url={has_suspicious_url} has_sender_brand_tag={} signal_count={}", legit.has_sender_brand_tag, legit.signal_count);
+    }
+    if std::env::var("DEBUG_SCORE").is_ok() && text.to_lowercase().contains("security code is being requested") {
+        eprintln!("DEBUG SCORE (row29): before_legit bucket={bucket} total_legit_signals={total_legit_signals} has_suspicious_url={has_suspicious_url} is_security={} signal_count={}", legit.is_security_notification, legit.signal_count);
+    }
+    if std::env::var("DEBUG_SCORE").is_ok() && text.to_lowercase().contains("thu nhập siêu") && base_score < 3.0 {
+        eprintln!("DEBUG SCORE (row704): before_legit bucket={bucket} total_legit_signals={total_legit_signals} has_suspicious_url={has_suspicious_url} is_job={} signal_count={} legacy={}", legit.is_legitimate_job_posting, legit.signal_count, legacy_legit_hits);
+    }
     if total_legit_signals > 0 {
-        // Stronger reduction: up to 3 levels for multiple signals
-        let reduction = total_legit_signals.min(3) as u8;
-        bucket = bucket.saturating_sub(reduction).max(1);
+        if has_suspicious_url {
+            // Suspicious URL present: limit reduction to 1 level.
+            // Brand impersonation is likely — don't over-reduce.
+            bucket = bucket.saturating_sub(1).max(1);
+        } else {
+            // No suspicious URLs: full reduction up to 3 levels.
+            let reduction = total_legit_signals.min(3) as u8;
+            bucket = bucket.saturating_sub(reduction).max(1);
+            // Guard: don't reduce below bucket 2 if high-value indicators
+            // at High strength are present — these are strong scam signals
+            // that legitimacy phrases alone shouldn't override.
+            let has_high_value_high = indicators.iter().any(|h| {
+                h.id.is_high_value() && h.strength == IndicatorStrength::High
+            });
+            if has_high_value_high {
+                bucket = bucket.max(2);
+            }
+        }
     }
 
     // Security notification override: if this is a security notification
@@ -242,7 +287,6 @@ pub fn compute_risk_bucket(
     // credential_request (which is expected in security notifications).
     // Skip caps if LinkSuspicious is present — legitimate notifications
     // don't use lookalike/suspicious URLs.
-    let has_suspicious_url = has(IndicatorId::LinkSuspicious).is_some();
     if !has_suspicious_url {
     if legit.is_security_notification {
         let has_non_credential_high = indicators.iter().any(|h| {
@@ -308,6 +352,7 @@ pub fn compute_risk_bucket(
         let has_blocking_high = indicators.iter().any(|h| {
             h.id.is_high_value() && h.strength == IndicatorStrength::High
                 && h.id != IndicatorId::CredentialRequest
+                && h.id != IndicatorId::ThreatAccount
         });
         if !has_blocking_high {
             bucket = bucket.min(3);
@@ -321,6 +366,7 @@ pub fn compute_risk_bucket(
                 && h.id != IndicatorId::CredentialRequest
                 && h.id != IndicatorId::BankTransfer
                 && h.id != IndicatorId::RecoveryScam
+                && h.id != IndicatorId::ThreatAccount
         });
         if !has_blocking_high {
             bucket = bucket.min(3);
@@ -348,6 +394,12 @@ pub fn compute_risk_bucket(
         }
     }
 
+    if std::env::var("DEBUG_SCORE").is_ok() && text.to_lowercase().contains("sim swap") {
+        eprintln!("DEBUG SCORE: before_channel bucket={bucket}");
+    }
+    if std::env::var("DEBUG_SCORE").is_ok() && text.to_lowercase().contains("security code is being requested") {
+        eprintln!("DEBUG SCORE (row29): before_channel bucket={bucket}");
+    }
     // 5. Channel-specific adjustment
     // SMS and messaging are higher risk channels for scams
     bucket = match channel {
@@ -361,8 +413,15 @@ pub fn compute_risk_bucket(
     // 5b. OTP legitimacy override (applied after channel adjustment)
     // An OTP message with "do not share" is almost certainly legitimate,
     // regardless of channel boost.
+    // BUT: if the message asks to contact someone (email/phone), it's phishing.
     if has(IndicatorId::CredentialRequest).is_some() {
-        if lower.contains("do not share") || lower.contains("don't share")
+        let has_contact_request = lower.contains("contact us at")
+            || lower.contains("contact us immediately")
+            || lower.contains("call us at")
+            || lower.contains("call immediately")
+            || lower.contains("reply to this number");
+        if !has_contact_request && (
+            lower.contains("do not share") || lower.contains("don't share")
             || lower.contains("không chia sẻ") || lower.contains("khong chia se")
             || lower.contains("never ask for this code") || lower.contains("never ask")
             || lower.contains("jangan berikan") || lower.contains("jangan bagikan")
@@ -374,7 +433,7 @@ pub fn compute_risk_bucket(
             || lower.contains("hindi ibigay") || lower.contains("wag ibigay")
             || lower.contains("hindi i-share") || lower.contains("wag i-share")
             || lower.contains("កានតែមិនដែលសុំ")
-        {
+        ) {
             bucket = bucket.min(2);
         }
     }
@@ -462,6 +521,12 @@ pub fn compute_risk_bucket(
     }
     } // end if !has_suspicious_url
 
+    if std::env::var("DEBUG_SCORE").is_ok() && text.to_lowercase().contains("sim swap") {
+        eprintln!("DEBUG SCORE: final bucket={bucket}");
+    }
+    if std::env::var("DEBUG_SCORE").is_ok() && text.to_lowercase().contains("security code is being requested") {
+        eprintln!("DEBUG SCORE (row29): final bucket={bucket}");
+    }
     // 6. Clamp
     bucket.clamp(1, 5)
 }
@@ -513,9 +578,15 @@ fn count_legitimacy_signals(lower: &str) -> usize {
     if lower.contains("has been completed") || lower.contains("has been processed")
         || lower.contains("has been credited") || lower.contains("has been sent")
         || lower.contains("successfully changed") || lower.contains("successfully completed")
-        || lower.contains("đã được") || lower.contains("đã chuyển")
-        || lower.contains("đã thanh toán") || lower.contains("đã chuyển khoản")
-        || lower.contains("thành công") || lower.contains("giao dịch thành công")
+        // Vietnamese — specific transaction patterns only
+        || lower.contains("đã được xử lý") || lower.contains("đã được ghi nhận")
+        || lower.contains("đã được duyệt") || lower.contains("đã được hoàn thành")
+        || lower.contains("đã được chuyển") || lower.contains("đã được kích hoạt")
+        || lower.contains("đã chuyển") || lower.contains("đã thanh toán")
+        || lower.contains("đã chuyển khoản")
+        || lower.contains("giao dịch thành công")
+        || (lower.contains("thành công") && (lower.contains("giao dịch")
+            || lower.contains("thanh toán") || lower.contains("chuyển khoản")))
         || lower.contains("pembayaran berhasil") || lower.contains("transfer berhasil")
         || lower.contains("transaksi berhasil") || lower.contains("pembayaran telah")
         || lower.contains("pembayaran selesai")

@@ -294,6 +294,10 @@ impl IndicatorId {
                     "no collateral", "no guarantor", "easy loan", "fast loan",
                     "cash loan", "personal loan", "credit approval",
                     "loan approved", "pre-approved", "lulus", "pinjaman",
+                    // Overpayment/refund scam
+                    "credited by mistake", "arrange the return",
+                    "return the money", "refund the difference",
+                    "credited in error", "wrongly credited",
                 ],
                 vi: &[
                     "chuyển tiền", "gửi tiền", "thanh toán", "nạp tiền",
@@ -484,6 +488,9 @@ impl IndicatorId {
                     "fund has delivered", "fund delivered",
                     "ipo allocation", "serious investors",
                     "exclusive ipo", "brokerage",
+                    "digital currency investment", "government-backed",
+                    "regulatory freeze", "investment portfolio",
+                    "bond investment matured", "reinvest now",
                 ],
                 vi: &[
                     "lợi nhuận đảm bảo", "không rủi ro", "thu nhập thụ động",
@@ -497,6 +504,27 @@ impl IndicatorId {
                     "dau tu", "loi nhuan", "co phieu", "trai phieu",
                     "lai suat cao", "lai suat co dinh", "rut von linh hoat",
                     "co hoi dau tu", "dau tu tien ao",
+                    // Stock tips / insider info
+                    "sắp bùng nổ", "sap bung no", "phân tích nội bộ",
+                    "phan tich noi bo", "danh mục khuyến nghị",
+                    "danh muc khuyen nghi", "chuyên gia",
+                    "chuyen gia", "đầu tư vip", "dau tu vip",
+                    "cổ phiếu chưa niêm yết", "co phieu chua niem yet",
+                    "otc", "ipo", "ưu đãi giá", "uu dai gia",
+                    "dự kiến giá ipo", "du kien gia ipo",
+                    "bùng nổ", "bung no",
+                    // Bond/reinvest
+                    "trái phiếu đáo hạn", "trai phieu dao han",
+                    "đầu tư lại", "dau tu lai",
+                    // Extra income / task scams
+                    "thu nhập thêm", "thu nhap them",
+                    "làm nhiệm vụ", "lam nhiem vu",
+                    "hoàn thành nhiệm vụ", "hoan thanh nhiem vu",
+                    // Business partnership / investment lure
+                    "hợp tác kinh doanh", "hop tac kinh doanh",
+                    "siêu lợi nhuận", "sieu loi nhuan",
+                    "đối tác đầu tư", "doi tac dau tu",
+                    "cơ hội hợp tác", "co hoi hop tac",
                 ],
                 th: &[
                     "ผลตอบแทนรับประกัน", "ไม่มีความเสี่ยง", "รายได้เฉื่อย",
@@ -633,6 +661,8 @@ impl IndicatorId {
                     "account has been suspended", "permanently locked",
                     "will be suspended", "will be closed", "will be terminated",
                     "account flagged", "suspicious login",
+                    "sim swap", "sim card swap", "number transfer",
+                    "port out request", "sim swap request",
                 ],
                 vi: &[
                     "tài khoản bị khóa", "tài khoản bị đóng", "ngừng hoạt động",
@@ -796,17 +826,25 @@ impl IndicatorId {
                     "finance analyst", "digital marketing role",
                     "great fit", "send your cv", "linkedin profile",
                     "$3,500/month", "$8,000/month",
+                    // Task scam patterns
+                    "extra income", "simple tasks", "complete tasks",
+                    "write review", "per day", "per task",
+                    "hire people", "task scam",
                 ],
                 vi: &[
                     "làm việc tại nhà", "việc làm dễ", "kiếm tiền",
                     "việc bán thời gian", "không cần kinh nghiệm",
                     "CTV", "hoa hồng", "thu nhập",
                     "xử lý đơn hàng", "khảo sát online",
+                    "viết review", "nhận ngay", "thu nhập siêu",
+                    "tuyển gấp", "nhân viên nhập liệu",
                     // Unaccented
                     "lam viec tai nha", "viec lam de", "kiem tien",
                     "viec ban thoi gian", "khong can kinh nghiem",
                     "hoa hong", "thu nhap",
                     "xu ly don hang", "khao sat online",
+                    "viet review", "nhan ngay", "thu nhap sieu",
+                    "tuyen gap", "nhan vien nhap lieu",
                 ],
                 th: &[
                     "ทำงานที่บ้าน", "งานง่าย", "หาเงิน", "งานพาร์ทไทม์",
@@ -841,9 +879,11 @@ impl IndicatorId {
                     "quyên góp", "từ thiện", "giúp nạn nhân", "cứu trợ",
                     "ủng hộ", "mỗi đồng đều quý",
                     "đồng bào", "bão lũ", "lũ lụt",
+                    "đóng góp", "mọi đóng góp", "miền Trung",
                     // Unaccented
                     "quyen gop", "tu thien", "giup nan nhan", "cuu tro",
                     "ung ho", "dong bao", "bao lu", "lu lut",
+                    "dong gop", "moi dong gop", "mien trung",
                 ],
                 th: &[
                     "บริจาค", "การกุศล", "ช่วยเหลือผู้ประสบภัย", "บรรเทาทุกข์",
@@ -1363,12 +1403,19 @@ impl IndicatorId {
                     "asset recovery", "funds recovery service",
                     "have you been scammed", "recover your losses",
                     "tracing your stolen funds",
+                    "investment fraud recovery", "free consultation",
+                    "helped many victims", "lawyer specializing",
+                    "specializing in fraud", "reclaim funds",
                 ],
                 vi: &[
                     "truy thu", "hoàn tiền", "bị lừa đảo",
                     "thu hồi tiền", "đòi lại tiền",
+                    "truy hồi", "nhận tiền", "đóng phí",
+                    "phí xử lý", "vụ lừa đảo",
                     // Unaccented
                     "truy thu", "hoan tien", "bi lua dao", "thu hoi tien",
+                    "truy hoi", "nhan tien", "dong phi", "phi xu ly",
+                    "vu lua dao",
                 ],
                 th: &[
                     "ทีมกู้คืน", "คืนเงิน", "ถูกหลอกลวง",
@@ -1398,6 +1445,8 @@ impl IndicatorId {
                     "government assistance", "financial aid",
                     "gst voucher", "payout to you", "cash payout",
                     "support payment", "cost of living",
+                    "community support grant", "selected for",
+                    "special top-up", "credit for",
                 ],
                 vi: &[
                     "bạn đủ điều kiện", "trợ cấp", "hỗ trợ chính phủ",
@@ -1470,6 +1519,8 @@ impl IndicatorId {
                 | IndicatorId::BankTransfer
                 | IndicatorId::Sextortion
                 | IndicatorId::RecoveryScam
+                | IndicatorId::PromiseHighReturn
+                | IndicatorId::ThreatAccount
         )
     }
 

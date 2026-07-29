@@ -123,6 +123,9 @@ fn detect_wrong_number_pivot(lower: &str) -> Vec<IndicatorHit> {
         || normalized.contains("mutual friend gave me")
         || normalized.contains("added your number")
         || normalized.contains("found your number")
+        // Traveling/phone acting up — common wrong-number scam opener
+        || normalized.contains("traveling") && normalized.contains("phone")
+        || normalized.contains("travelling") && normalized.contains("phone")
         // Vietnamese
         || normalized.contains("nhầm số")
         || normalized.contains("nham so")
@@ -239,6 +242,18 @@ fn detect_wrong_number_pivot(lower: &str) -> Vec<IndicatorHit> {
         });
     }
 
+    // "Confidential" / "help me with something" — social engineering lure
+    let has_confidential = lower.contains("confidential")
+        || lower.contains("help me with something")
+        || lower.contains("need your help with");
+    if has_confidential {
+        hits.push(IndicatorHit {
+            id: IndicatorId::FinancialRequest,
+            strength: IndicatorStrength::Medium,
+            match_count: 1,
+        });
+    }
+
     if !hits.is_empty() {
         hits.push(IndicatorHit {
             id: IndicatorId::SenderAnomaly,
@@ -287,6 +302,12 @@ fn detect_too_good_to_be_true(lower: &str) -> Option<IndicatorHit> {
         "huawei", "oneplus", "nothing phone",
         // SEA luxury
         "prada", "burberry", "balenciaga", "dior",
+        // Additional tech brands
+        "dell", "xps", "asus", "acer", "lenovo", "hp ",
+        // Vehicles
+        "sh 150", "sh 350", "winner", "exciter", "air blade",
+        // Concert/event tickets
+        "blackpink", "concert", "vip ticket",
     ];
 
     let has_brand = brands.iter().any(|b| brand_match(lower, b));
@@ -300,6 +321,10 @@ fn detect_too_good_to_be_true(lower: &str) -> Option<IndicatorHit> {
         "sgd 50", "sgd 100", "sgd 200", "sgd 300",
         "vnd 500k", "vnd 1m", "vnd 2m",
         "500k", "1tr", "2tr", "3tr",
+        // Vietnamese "X triệu" (million) — common in fake marketplace scams
+        "5 triệu", "12 triệu", "52 triệu", "990k",
+        "5 trieu", "12 trieu", "52 trieu",
+        "giá chỉ", "gia chi", "giá gốc",
         // Thai Baht
         "฿500", "฿1000", "฿2000", "฿5000",
         "baht 500", "baht 1000", "baht 2000",
@@ -315,6 +340,11 @@ fn detect_too_good_to_be_true(lower: &str) -> Option<IndicatorHit> {
         "murah", "termurah",
         "ถูก", "ราคาถูก",
         "mura", "presyong mura",
+        // Vietnamese "hàng xách tay" (grey market goods)
+        "hàng xách tay", "hang xach tay",
+        // "số lượng có hạn" / "số lượng giới hạn" (limited quantity)
+        "số lượng có hạn", "so luong co han",
+        "số lượng giới hạn", "so luong gioi han",
     ];
 
     let has_low_price = price_patterns.iter().any(|p| lower.contains(p));

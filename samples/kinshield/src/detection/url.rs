@@ -28,6 +28,13 @@ fn domain_contains_brand(domain: &str, brand: &str) -> bool {
             if part == brand {
                 return true;
             }
+            // Also check if a part starts with the brand name followed by
+            // additional chars (e.g., "gdtalert" starts with "gdt").
+            // This catches lookalike domains that prepend the brand name
+            // to action words or other suffixes.
+            if part.starts_with(brand) && part.len() > brand.len() {
+                return true;
+            }
         }
         return false;
     }
@@ -55,12 +62,23 @@ const SUSPICIOUS_TLDS: &[&str] = &[
     ".bid", ".date", ".download", ".stream", ".gdn",
     ".racing", ".accountant", ".cricket", ".faith",
     ".trade", ".webcam", ".party",
+    ".vip", ".icu", ".buzz", ".fun", ".site", ".online",
+    ".store", ".tech", ".space", ".live", ".media",
+    ".info", ".biz", ".rest", ".bar", ".cam",
 ];
 
-/// Regex to extract URLs from text.
+/// Regex to extract URLs from text (with http:// or https:// prefix).
 static URL_RE: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r"https?://[^\s<>\[\]{}|\\^`]+")
         .expect("invalid URL regex")
+});
+
+/// Regex to extract bare domains (without http:// prefix) from text.
+/// Matches domains that have at least one dot and a known TLD suffix.
+/// Supports both single-dot (domain.tld) and multi-dot (sub.domain.tld) forms.
+static BARE_DOMAIN_RE: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r"\b[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)*\.[a-z]{2,}(?:/[^\s]*)?")
+        .expect("invalid bare domain regex")
 });
 
 /// Regex to detect raw IP addresses in URLs.
@@ -69,12 +87,28 @@ static IP_IN_URL_RE: LazyLock<Regex> = LazyLock::new(|| {
         .expect("invalid IP URL regex")
 });
 
-/// Extract all URLs from text.
+/// Extract all URLs from text, including bare domains without http:// prefix.
 pub fn extract_urls(text: &str) -> Vec<String> {
-    URL_RE
+    let mut urls: Vec<String> = URL_RE
         .find_iter(text)
         .map(|m| m.as_str().to_string())
-        .collect()
+        .collect();
+
+    // Also extract bare domains (without protocol prefix)
+    // These are common in scam SMS where the URL is written as
+    // "vietnamobile-confirm.net" without http://
+    let lower = text.to_lowercase();
+    for m in BARE_DOMAIN_RE.find_iter(&lower) {
+        let bare = m.as_str();
+        // Skip if already captured by URL_RE (with protocol)
+        let already_captured = urls.iter().any(|u| u.to_lowercase().contains(bare));
+        if !already_captured {
+            // Add with synthetic http:// prefix for consistent processing
+            urls.push(format!("http://{}", bare));
+        }
+    }
+
+    urls
 }
 
 /// Known brands and their legitimate domain patterns.
@@ -144,6 +178,9 @@ const KNOWN_BRANDS: &[(&str, &[&str])] = &[
     ("mbbank", &["mbbank.com.vn"]),
     ("sacombank", &["sacombank.com.vn"]),
     ("eximbank", &["eximbank.com.vn"]),
+    ("vib", &["vib.com.vn"]),
+    ("namabank", &["namabank.com.vn"]),
+    ("ocb", &["ocb.com.vn"]),
     // Vietnam fintech/telco
     ("momo", &["momo.vn"]),
     ("vnpay", &["vnpay.vn"]),
@@ -235,13 +272,57 @@ const KNOWN_BRANDS: &[(&str, &[&str])] = &[
     ("mobi", &["mobifone.vn"]),
     ("mobifone", &["mobifone.vn"]),
     ("vinaphone", &["vinaphone.vn"]),
-    ("fpt", &["fpt.com"]),
+    ("fpt", &["fpt.com", "fpt.vn", "fpt.com.vn"]),
     ("winmart", &["winmart.vn"]),
     ("thegioididong", &["thegioididong.com"]),
     ("dien may xanh", &["dienmayxanh.com"]),
     ("chotot", &["chotot.com"]),
     ("zalopay", &["zalopay.vn"]),
     ("binance", &["binance.com", "binance.vn"]),
+    // International payment/services
+    ("paypal", &["paypal.com"]),
+    ("stripe", &["stripe.com"]),
+    ("wise", &["wise.com"]),
+    ("revolut", &["revolut.com"]),
+    // Vietnam additional
+    ("tcbs", &["tcbs.com.vn"]),
+    ("vndirect", &["vndirect.com.vn"]),
+    ("vn30", &["vn30.com.vn"]),
+    ("ssi", &["ssi.com.vn"]),
+    ("hsc", &["hsc.com.vn"]),
+    ("vps", &["vps.com.vn"]),
+    ("dnse", &["dnse.com.vn"]),
+    ("best express", &["best-inc.com", "best-inc.vn"]),
+    ("best", &["best-inc.com", "best-inc.vn"]),
+    ("vnid", &["vnid.vn"]),
+    ("vneid", &["dichvucong.gov.vn"]),
+    ("dvc", &["dichvucong.gov.vn"]),
+    ("dichvucong", &["dichvucong.gov.vn"]),
+    ("kho bac", &["kbnn.gov.vn"]),
+    ("kho bạc", &["kbnn.gov.vn"]),
+    // Additional tech/consumer brands
+    ("xiaomi", &["mi.com", "xiaomi.com"]),
+    ("dell", &["dell.com"]),
+    ("asus", &["asus.com"]),
+    ("acer", &["acer.com"]),
+    ("hp", &["hp.com"]),
+    ("lenovo", &["lenovo.com"]),
+    ("blackpink", &[]),
+    ("concert", &[]),
+    ("tiger brokers", &["tigerbrokers.com", "tigerbrokers.com.sg"]),
+    ("tigerbrokers", &["tigerbrokers.com", "tigerbrokers.com.sg"]),
+    ("spx", &["spx.co", "spx.vn"]),
+    ("spx express", &["spx.co", "spx.vn"]),
+    ("sendo", &["sendo.vn"]),
+    ("gdt", &["gdt.gov.vn", "tax.gov.vn"]),
+    ("tong cuc thue", &["gdt.gov.vn", "tax.gov.vn"]),
+    ("tổng cục thuế", &["gdt.gov.vn", "tax.gov.vn"]),
+    ("skillsfuture", &["skillsfuture.gov.sg", "skillsfuture.sg"]),
+    ("people's association", &["pa.gov.sg"]),
+    ("pa", &["pa.gov.sg"]),
+    ("ninja van", &["ninjavan.co", "ninjavan.com"]),
+    ("ninjavan", &["ninjavan.co", "ninjavan.com"]),
+    ("mas", &["mas.gov.sg"]),
 ];
 
 /// Action words commonly used in phishing URLs combined with brand names.
@@ -301,17 +382,30 @@ fn detect_lookalike_domain(url: &str) -> bool {
     }
 
     // 3. Brand name in domain but domain doesn't match any legitimate domain
-    //    Only flag if the domain is NOT in the legitimate list
+    //    Flag even without action words — if a brand name appears in a
+    //    domain that isn't the brand's legitimate domain, it's suspicious.
     for (brand, legit_domains) in KNOWN_BRANDS {
         if domain_contains_brand(domain_no_port, brand) {
             let is_legit = legit_domains
                 .iter()
                 .any(|&legit| domain_no_port == legit || domain_no_port.ends_with(&format!(".{}", legit)));
-            if !is_legit && domain_contains_brand(domain_no_port, brand) {
-                // Extra check: if domain has action words or suspicious patterns
+            if !is_legit {
+                // Brands with empty legit_domains (e.g., "concert") always flag
+                if legit_domains.is_empty() {
+                    return true;
+                }
+                // Check if the domain TLD differs from all legit domains
+                // e.g., sacombank.co vs sacombank.com.vn
+                let domain_tld = domain_no_port.rsplit('.').next().unwrap_or("");
+                let legit_tlds: Vec<&str> = legit_domains.iter()
+                    .map(|d| d.rsplit('.').next().unwrap_or(""))
+                    .collect();
                 let has_action = PHISHING_ACTION_WORDS.iter().any(|&a| domain_no_port.contains(a));
                 let has_suspicious_tld = SUSPICIOUS_TLDS.iter().any(|&tld| domain_no_port.ends_with(tld));
-                if has_action || has_suspicious_tld {
+                let has_hyphen = domain_no_port.contains('-');
+                let tld_mismatch = !legit_tlds.contains(&domain_tld);
+                // Flag if: action word + suspicious TLD, or hyphenated, or TLD mismatch
+                if has_action || has_suspicious_tld || has_hyphen || tld_mismatch {
                     return true;
                 }
             }
@@ -352,7 +446,89 @@ const SUSPICIOUS_DOMAIN_SUFFIXES: &[&str] = &[
     "-tuyendung", "-hoanthue", "-trocap", "-kichcau",
     "-thanhtoan", "-giaingan", "-xacnhan", "-xacminh",
     "-baomat", "-dangnhap",
+    // Additional suspicious suffixes
+    "-giare", "-flashsale", "-reinvest", "-bonus",
+    "-account", "-wallet", "-login", "-signin",
+    "-claim", "-collect", "-redeem", "-reward",
+    "-cashback", "-hoantien", "-nhan", "-confirm",
+    "-giahan", "-dangky", "-kichhoat",
 ];
+
+/// Check if two strings differ by at most 1 edit (insertion, deletion, or substitution).
+fn is_close_typo(a: &str, b: &str) -> bool {
+    let a_chars: Vec<char> = a.chars().collect();
+    let b_chars: Vec<char> = b.chars().collect();
+    let (la, lb) = (a_chars.len(), b_chars.len());
+
+    if la == lb {
+        // Check substitution: at most 1 char differs
+        let diffs = a_chars.iter().zip(b_chars.iter()).filter(|(x, y)| x != y).count();
+        return diffs <= 1;
+    }
+
+    if la.abs_diff(lb) == 1 {
+        // Check insertion/deletion: at most 1 char difference
+        let (longer, shorter) = if la > lb { (&a_chars, &b_chars) } else { (&b_chars, &a_chars) };
+        let mut skip = 0;
+        let mut diffs = 0;
+        for i in 0..longer.len() {
+            if skip < shorter.len() && longer[i] == shorter[skip] {
+                skip += 1;
+            } else {
+                diffs += 1;
+            }
+        }
+        return diffs <= 1;
+    }
+
+    false
+}
+
+/// Detect typosquatting domains — domains that are a close edit distance
+/// match to a known brand name but on a different TLD.
+fn detect_typosquat_domain(url: &str) -> bool {
+    let lower = url.to_lowercase();
+    let domain_part = lower
+        .strip_prefix("https://")
+        .or_else(|| lower.strip_prefix("http://"))
+        .unwrap_or(&lower);
+    let domain = domain_part.split('/').next().unwrap_or(domain_part);
+    let domain_no_port = domain.split(':').next().unwrap_or(domain);
+
+    // Get the main domain part (before the TLD)
+    let parts: Vec<&str> = domain_no_port.split('.').collect();
+    if parts.len() < 2 {
+        return false;
+    }
+
+    // Check the main label (second-to-last part for simple domains,
+    // or the last non-TLD part)
+    let main_label = if parts.len() >= 2 { parts[parts.len() - 2] } else { parts[0] };
+
+    for (brand, legit_domains) in KNOWN_BRANDS {
+        // Only check brands with ≥5 chars to avoid false positives
+        if brand.len() < 5 || !brand.is_ascii() || brand.contains(' ') || brand.contains('.') {
+            continue;
+        }
+
+        // Check if this is a close typo of the brand
+        if !is_close_typo(main_label, brand) {
+            continue;
+        }
+
+        // Make sure it's not actually a legitimate domain
+        let is_legit = legit_domains
+            .iter()
+            .any(|&legit| domain_no_port == legit || domain_no_port.ends_with(&format!(".{}", legit)));
+        if is_legit {
+            continue;
+        }
+
+        return true;
+    }
+
+    false
+}
 
 /// Detect generic phishing domains that don't contain known brand names.
 ///
@@ -421,7 +597,9 @@ fn extract_domain(url: &str) -> String {
         .strip_prefix("https://")
         .or_else(|| lower.strip_prefix("http://"))
         .unwrap_or(&lower);
-    domain_part.split('/').next().unwrap_or(domain_part).to_string()
+    let domain = domain_part.split('/').next().unwrap_or(domain_part);
+    // Strip trailing punctuation that may be captured from sentence context
+    domain.trim_end_matches(|c: char| !c.is_ascii_alphanumeric() && c != '.').trim_end_matches('.').to_string()
 }
 
 /// Analyze URLs in text for suspicious patterns.
@@ -449,6 +627,11 @@ pub fn analyze_urls(text: &str) -> Option<IndicatorHit> {
         // Check for lookalike domains (brand impersonation)
         if detect_lookalike_domain(url) {
             suspicious_count += 2; // Brand impersonation is highly suspicious
+        }
+
+        // Check for typosquatting domains (close edit distance to known brands)
+        if detect_typosquat_domain(url) {
+            suspicious_count += 2;
         }
 
         // Check for generic phishing domains (no brand name but suspicious pattern)
