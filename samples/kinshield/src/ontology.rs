@@ -88,6 +88,11 @@ pub enum IndicatorId {
     RecoveryScam,
     GovernmentBenefitLure,
     FakeMarketplace,
+    // New indicators for emerging scam patterns
+    QRCodeScan,
+    WrongNumberPivot,
+    SubscriptionTrap,
+    DeepfakeImpersonation,
 }
 
 impl IndicatorId {
@@ -123,6 +128,10 @@ impl IndicatorId {
             IndicatorId::RecoveryScam => "recovery_scam",
             IndicatorId::GovernmentBenefitLure => "government_benefit_lure",
             IndicatorId::FakeMarketplace => "fake_marketplace",
+            IndicatorId::QRCodeScan => "qr_code_scan",
+            IndicatorId::WrongNumberPivot => "wrong_number_pivot",
+            IndicatorId::SubscriptionTrap => "subscription_trap",
+            IndicatorId::DeepfakeImpersonation => "deepfake_impersonation",
         }
     }
 
@@ -158,6 +167,10 @@ impl IndicatorId {
             IndicatorId::RecoveryScam => IndicatorCategory::Financial,
             IndicatorId::GovernmentBenefitLure => IndicatorCategory::Lure,
             IndicatorId::FakeMarketplace => IndicatorCategory::ECommerce,
+            IndicatorId::QRCodeScan => IndicatorCategory::Technical,
+            IndicatorId::WrongNumberPivot => IndicatorCategory::Social,
+            IndicatorId::SubscriptionTrap => IndicatorCategory::Financial,
+            IndicatorId::DeepfakeImpersonation => IndicatorCategory::Technical,
         }
     }
 
@@ -193,6 +206,10 @@ impl IndicatorId {
             IndicatorId::RecoveryScam,
             IndicatorId::GovernmentBenefitLure,
             IndicatorId::FakeMarketplace,
+            IndicatorId::QRCodeScan,
+            IndicatorId::WrongNumberPivot,
+            IndicatorId::SubscriptionTrap,
+            IndicatorId::DeepfakeImpersonation,
         ]
     }
 
@@ -233,6 +250,10 @@ impl IndicatorId {
             IndicatorId::RecoveryScam => "Recovery Scam",
             IndicatorId::GovernmentBenefitLure => "Government Benefit Lure",
             IndicatorId::FakeMarketplace => "Fake Marketplace",
+            IndicatorId::QRCodeScan => "QR Code Scan",
+            IndicatorId::WrongNumberPivot => "Wrong Number Pivot",
+            IndicatorId::SubscriptionTrap => "Subscription Trap",
+            IndicatorId::DeepfakeImpersonation => "Deepfake Impersonation",
         }
     }
 
@@ -248,6 +269,15 @@ impl IndicatorId {
                     "don't wait", "hurry", "expires", "deadline",
                     "within 24 hours", "within 48 hours", "last chance",
                     "final notice", "action required", "response required",
+                    // Additional urgency variants
+                    "within 2 hours", "within 12 hours", "before midnight",
+                    "last warning", "final warning", "final reminder",
+                    "overdue", "past due", "late payment",
+                    "do not ignore", "do not disregard",
+                    "must respond", "must act", "must complete",
+                    "failure to", "non-compliance",
+                    "immediate action", "prompt action",
+                    "delay will", "delay may result",
                 ],
                 vi: &[
                     "khẩn cấp", "gấp lắm", "ngay lập tức", "gấp", "nhanh lên",
@@ -260,21 +290,40 @@ impl IndicatorId {
                 th: &[
                     "ด่วน", "เร่งด่วน", "ทันที", "ภายใน", "หมดเวลา",
                     "รีบ", "เร็วๆ", "อายุสั้น", "รีบด่วน",
+                    // Additional urgency
+                    "ภายใน 24 ชั่วโมง", "ภายใน 48 ชั่วโมง", "โอกาสสุดท้าย",
+                    "แจ้งเตือนครั้งสุดท้าย", "ต้องดำเนินการ", "ห้ามเพิกเฉย",
+                    "เร่งดำเนินการ", "หมดเขต", "กำหนดเวลา",
                 ],
                 id: &[
                     "segera", "darurat", "penting", "sekarang", "cepat",
                     "batas waktu", "berakhir", "segera lah",
+                    // Additional urgency
+                    "dalam 24 jam", "dalam 48 jam", "kesempatan terakhir",
+                    "peringatan terakhir", "harus segera", "jangan abaikan",
+                    "segera lakukan", "terlambat", "waktu habis",
                 ],
                 ms: &[
                     "segera", "kecemasan", "penting", "sekarang", "cepat",
                     "tarikh tamat", "tamat",
+                    // Additional urgency
+                    "dalam 24 jam", "dalam 48 jam", "peluang terakhir",
+                    "amaran terakhir", "mesti segera", "jangan abaikan",
+                    "segera bertindak", "lewat", "masa tamat",
                 ],
                 tl: &[
                     "urgent", "agad", "napakabilis", "panahon", "malapit na",
                     "hurry", "deadline", "expiry",
+                    // Additional urgency
+                    "within 24 hours", "within 48 hours", "huling pagkakataon",
+                    "huling babala", "kailangan agad", "wag balewalain",
+                    "agad kumilos", "late na", "matatapos na",
                 ],
                 km: &[
                     "បន្ទាន់", "លឿន", "ឥឡូវនេះ", "ក្នុងរយៈ", "ផុតកំណត់",
+                    // Additional urgency
+                    "ក្នុង 24 ម៉ោង", "ក្នុង 48 ម៉ោង", "ឱកាសចុងក្រោយ",
+                    "ការព្រមានចុងក្រោយ", "ត្រូវធ្វើបន្ទាន់", "កុំមើលរំលង",
                 ],
                 zh: &["紧急", "立即", "马上", "赶快", "截止", "到期"],
                 other: &[],
@@ -322,6 +371,9 @@ impl IndicatorId {
                     // Loan keywords
                     "สินเชื่อ", "อนุมัติ", "กู้เงิน", "สินเชื่อส่วนบุคคล",
                     "อนุมัติเร็ว",
+                    // Additional financial request
+                    "ค่าธรรมเนียม", "ค่าดำเนินการ", "ค่าขนส่ง",
+                    "วางเงินค้ำประกัน", "ชำระค่าปรับ",
                 ],
                 id: &[
                     "kirim uang", "transfer uang", "bayar", "transfer dana",
@@ -329,6 +381,9 @@ impl IndicatorId {
                     // Loan keywords
                     "pinjaman", "disetujui", "persetujuan", "tanpa agunan",
                     "pinjaman cepat", "kredit",
+                    // Additional financial request
+                    "biaya administrasi", "biaya proses", "biaya kirim",
+                    "bayar denda", "bayar biaya", "transfer sekarang",
                 ],
                 ms: &[
                     "hantar wang", "pindah wang", "bayar", "pindahan dana",
@@ -336,6 +391,9 @@ impl IndicatorId {
                     // Loan keywords
                     "pinjaman", "diluluskan", "kelulusan", "tanpa penjamin",
                     "pinjaman cepat", "kredit",
+                    // Additional financial request
+                    "fi pentadbiran", "fi proses", "fi penghantaran",
+                    "bayar denda", "bayar fi", "pindah sekarang",
                 ],
                 tl: &[
                     "magpadala ng pera", "bayad", "transfer", "padala",
@@ -343,11 +401,16 @@ impl IndicatorId {
                     // Loan keywords
                     "utang", "loan", "approved", "walang collateral",
                     "payday loan",
+                    // Additional financial request
+                    "bayad na", "processing fee", "admin fee",
+                    "bayad ang multa", "ilipat ang pera",
                 ],
                 km: &[
                     "ផ្ញើប្រាក់", "ផ្ទេរប្រាក់", "បង់ប្រាក់", "បង់ថ្លៃ",
                     // Loan keywords
                     "ប្រាក់កម្ចី", "អនុម័ត", "ឥណទាន",
+                    // Additional financial request
+                    "ថ្លៃចំណាយ", "ថ្លៃដំណើរការ", "បង់ប្រាក់ពិន័យ",
                 ],
                 zh: &["转账", "汇款", "付款", "打钱", "支付", "贷款", "批准", "无抵押", "快速放款"],
                 other: &[],
@@ -377,21 +440,36 @@ impl IndicatorId {
                 th: &[
                     "รหัสผ่าน", "รหัส otp", "รหัสยืนยัน", "รหัสลับ",
                     "กรอกรหัสผ่าน", "รหัส pin",
+                    // Additional credential request
+                    "รหัส 6 หลัก", "รหัสยืนยันตัวตน", "รหัสความปลอดภัย",
+                    "แชร์รหัส", "ส่งรหัส", "ห้ามแชร์รหัส",
                 ],
                 id: &[
                     "kata sandi", "kode otp", "kode verifikasi", "kode keamanan",
                     "masukkan kata sandi", "pin",
+                    // Additional credential request
+                    "kode 6 digit", "kode verifikasi identitas", "bagikan kode",
+                    "kirim kode", "jangan bagikan kode",
                 ],
                 ms: &[
                     "kata laluan", "kod otp", "kod pengesahan", "kod keselamatan",
                     "masukkan kata laluan", "pin",
+                    // Additional credential request
+                    "kod 6 digit", "kod pengesahan identiti", "kongsi kod",
+                    "hantar kod", "jangan kongsi kod",
                 ],
                 tl: &[
                     "password", "otp", "verification code", "passcode",
                     "pumasok ng password", "code",
+                    // Additional credential request
+                    "6-digit code", "security code", "ibahagi ang code",
+                    "ipadala ang code", "wag ibahagi ang code",
                 ],
                 km: &[
                     "ពាក្យសម្ងាត់", "កូដ otp", "កូដផ្ទៀងផ្ទាត់", "កូដសុវត្ថិភាព",
+                    // Additional credential request
+                    "កូដ 6 ខ្ទង់", "កូដផ្ទៀងផ្ទាត់អត្តសញ្ញាណ", "ចែករំលែកកូដ",
+                    "ផ្ញើកូដ", "កុំចែករំលែកកូដ",
                 ],
                 zh: &["密码", "验证码", "动态码", "安全码", "一次性密码"],
                 other: &[],
@@ -491,6 +569,15 @@ impl IndicatorId {
                     "digital currency investment", "government-backed",
                     "regulatory freeze", "investment portfolio",
                     "bond investment matured", "reinvest now",
+                    // Additional investment lure patterns
+                    "grow your savings", "let your money work",
+                    "financial freedom", "wealth building",
+                    "retire early", "multiply your savings",
+                    "insider tip", "insider information",
+                    "signal group", "trading signals",
+                    "copy my trades", "follow my trades",
+                    "managed account", "account management",
+                    "pamm account", "social trading",
                 ],
                 vi: &[
                     "lợi nhuận đảm bảo", "không rủi ro", "thu nhập thụ động",
@@ -660,6 +747,7 @@ impl IndicatorId {
                     "unrecognized device", "suspicious activity", "suspended due to",
                     "account has been suspended", "permanently locked",
                     "will be suspended", "will be closed", "will be terminated",
+                    "account will be frozen", "will be frozen",
                     "account flagged", "suspicious login",
                     "sim swap", "sim card swap", "number transfer",
                     "port out request", "sim swap request",
@@ -738,6 +826,9 @@ impl IndicatorId {
                     "delivery pending", "package waiting",
                     "redelivery fee", "parcel held", "package held at",
                     "delivery on hold", "shipment held",
+                    "insurance claim", "verification fee",
+                    "replacement", "documentation confirmation",
+                    "could not be delivered", "confirm your address",
                 ],
                 vi: &[
                     "gói hàng", "giao hàng", "kiện hàng", "theo dõi đơn hàng",
@@ -751,21 +842,36 @@ impl IndicatorId {
                 th: &[
                     "พัสดุ", "จัดส่ง", "พัสดุภาค", "ติดตามพัสดุ",
                     "นัดหมายใหม่", "จัดส่งล้มเหลว",
+                    // Additional delivery lure
+                    "พัสดุติดค้าง", "ค่าธรรมเนียมศุลกากร", "ด่านศุลกากร",
+                    "อัปเดตที่อยู่", "ค่าจัดส่งใหม่", "เก็บที่สาขา",
                 ],
                 id: &[
                     "paket", "pengiriman", "lacak paket", "jadwal ulang",
                     "pengiriman gagal", "kurir",
+                    // Additional delivery lure
+                    "paket tertahan", "biaya bea cukai", "paket ditahan",
+                    "perbarui alamat", "biaya kirim ulang", "ambil di kantor",
                 ],
                 ms: &[
                     "pekese", "penghantaran", "jejak pesanan", "jadual semula",
                     "penghantaran gagal", "kurier",
+                    // Additional delivery lure
+                    "pakej tertahan", "fi kastam", "pakej ditahan",
+                    "kemas kini alamat", "fi hantar semula", "ambil di pejabat",
                 ],
                 tl: &[
                     "package", "delivery", "parcel", "tracking",
                     "reschedule", "delivery failed", "courier",
+                    // Additional delivery lure
+                    "nai-hold ang package", "customs fee", "na-detain ang parcel",
+                    "update address", "redelivery fee", "pick up sa branch",
                 ],
                 km: &[
                     "កញ្ចប់", "ការដឹកជញ្ជូន", "តាមដានការបញ្ជូន", "បរាជ័យ",
+                    // Additional delivery lure
+                    "កញ្ចប់ត្រូវបានកាន់កាប់", "ថ្លៃគយ", "បន្ទាប់ផ្ទះ",
+                    "ធ្វើបច្ចុប្បន្នភាពអាសយដ្ឋាន", "ថ្លៃដឹកជញ្ជូនឡើងវិញ",
                 ],
                 zh: &["包裹", "快递", "派送", "追踪", "重新安排", "派送失败"],
                 other: &[],
@@ -791,21 +897,35 @@ impl IndicatorId {
                 th: &[
                     "คุณได้รับรางวัล", "ยินดีด้วย", "ถูกรางวัล", "ลอตเตอรี่",
                     "รางวัล", "จับรางวัล",
+                    // Additional prize lure
+                    "คูปังงาน", "รับรางวัล", "เครดิตฟรี", "แลกของรางวัล",
+                    "โบนัส", "สิทธิพิเศษ",
                 ],
                 id: &[
                     "anda menang", "selamat", "undian", "lotre",
                     "hadiah", "beruntung",
+                    // Additional prize lure
+                    "voucher", "klaim hadiah", "kredit gratis", "tukar hadiah",
+                    "bonus", "spesial",
                 ],
                 ms: &[
                     "anda menang", "tahniah", "undi", "loteri",
                     "hadiah", "bertuah",
+                    // Additional prize lure
+                    "baucar", "tuntut hadiah", "kredit percuma", "tukar hadiah",
+                    "bonus", "istimewa",
                 ],
                 tl: &[
                     "panalo ka", "congratulations", "premyo", "lottery",
                     "sweepstakes", "lucky draw",
+                    // Additional prize lure
+                    "voucher", "claim premyo", "free credit", "palit premyo",
+                    "bonus", "espesyal",
                 ],
                 km: &[
                     "អ្នកឈ្នះ", "អបអរសាទរ", "រង្វាន់", "ឆ្នោត",
+                    // Additional prize lure
+                    "វ៉ៅច័រ", "ទទួលរង្វាន់", "ឥតគិតថ្លៃ", "ប្តូររង្វាន់",
                 ],
                 zh: &["中奖", "恭喜", "奖品", "彩票", "抽奖", "幸运"],
                 other: &[],
@@ -826,6 +946,8 @@ impl IndicatorId {
                     "finance analyst", "digital marketing role",
                     "great fit", "send your cv", "linkedin profile",
                     "$3,500/month", "$8,000/month",
+                    "social media manager", "fintech startup",
+                    "$4,000/month", "software license",
                     // Task scam patterns
                     "extra income", "simple tasks", "complete tasks",
                     "write review", "per day", "per task",
@@ -845,6 +967,9 @@ impl IndicatorId {
                     "xu ly don hang", "khao sat online",
                     "viet review", "nhan ngay", "thu nhap sieu",
                     "tuyen gap", "nhan vien nhap lieu",
+                    // Additional Vietnamese job scam patterns
+                    "quan ly fanpage", "lương cao", "luong cao",
+                    "viec lam remote", "ho tro xin grant",
                 ],
                 th: &[
                     "ทำงานที่บ้าน", "งานง่าย", "หาเงิน", "งานพาร์ทไทม์",
@@ -913,6 +1038,14 @@ impl IndicatorId {
                     "crypto", "bitcoin", "ethereum", "forex", "trading",
                     "mining", "nft", "token sale", "ico", "defi",
                     "blockchain investment",
+                    // Modern crypto/web3 scam vocabulary
+                    "staking", "airdrop", "yield farming", "liquidity pool",
+                    "web3", "ai trading bot", "auto trading", "copy trading",
+                    "mint", "nft mint", "presale", "token presale",
+                    "solanac", "solana", "usdt", "usdc", "binance",
+                    "metaverse", "play to earn", "p2e", "gamefi",
+                    "smart contract", "wallet connect", "seed phrase",
+                    "recovery phrase", "private key", "connect wallet",
                 ],
                 vi: &[
                     "tiền ảo", "bitcoin", "forex", "đầu tư tiền điện tử",
@@ -921,14 +1054,23 @@ impl IndicatorId {
                 th: &[
                     "คริปโต", "บิตคอยน์", "forex", "เทรด", "ขุด",
                     "โทเคน", "ico",
+                    // Additional crypto
+                    "สตาร์คิง", "เอียร์ดรอป", "nft", "web3",
+                    "วอลเล็ต", "กระเป๋าเงินดิจิทัล", "เชื่อมต่อวอลเล็ต",
                 ],
                 id: &[
                     "kripto", "bitcoin", "forex", "trading", "menambang",
                     "token", "ico",
+                    // Additional crypto
+                    "staking", "airdrop", "nft", "web3",
+                    "wallet", "dompet digital", "hubungkan wallet",
                 ],
                 ms: &[
                     "kripto", "bitcoin", "forex", "trading", "lombong",
                     "token", "ico",
+                    // Additional crypto
+                    "staking", "airdrop", "nft", "web3",
+                    "wallet", "dompet digital", "sambung wallet",
                 ],
                 tl: &[
                     "crypto", "bitcoin", "forex", "trading", "mining",
@@ -1010,7 +1152,7 @@ impl IndicatorId {
                 en: &[
                     "call this number", "call now", "call us",
                     "contact us at", "dial", "phone number",
-                    "hotline", "call back",
+                    "hotline", "call back", "please call",
                 ],
                 vi: &[
                     "gọi số này", "gọi ngay", "liên hệ số",
@@ -1506,6 +1648,136 @@ impl IndicatorId {
                 zh: &["全新未拆", "批发价", "库存有限"],
                 other: &[],
             },
+
+            IndicatorId::QRCodeScan => IndicatorKeywords {
+                indicator: *self,
+                en: &[
+                    "qr code", "scan qr", "scan to pay", "scan this code",
+                    "scan here", "quishing", "scan to receive",
+                    "scan to claim", "scan to verify",
+                ],
+                vi: &[
+                    "mã qr", "quét mã qr", "quét để thanh toán",
+                    "quét mã nhận thưởng",
+                ],
+                th: &[
+                    "คิวอาร์โค้ด", "สแกน qr", "สแกนจ่ายเงิน",
+                ],
+                id: &[
+                    "kode qr", "pindai qr", "scan qr", "pindai untuk bayar",
+                ],
+                ms: &[
+                    "kod qr", "imbas qr", "imbas untuk bayar",
+                ],
+                tl: &[
+                    "qr code", "i-scan ang qr", "scan para bayad",
+                ],
+                km: &[
+                    "កូដ qr", "ស្កេន qr",
+                ],
+                zh: &["二维码", "扫码", "扫码支付"],
+                other: &[],
+            },
+
+            IndicatorId::WrongNumberPivot => IndicatorKeywords {
+                indicator: *self,
+                en: &[
+                    "wrong number", "is this", "who is this",
+                    "you seem nice", "got your number by mistake",
+                    "sorry wrong number", "let's be friends",
+                ],
+                vi: &[
+                    "số nhầm rồi", "bạn là ai", "nhầm số",
+                    "làm quen nhé", "được số này do nhầm",
+                ],
+                th: &[
+                    "ผิดเบอร์", "คุณเป็นใคร", "เบอร์ผิด",
+                    "มาเป็นเพื่อนกันไหม", "ได้เบอร์มาจากการกดผิด",
+                ],
+                id: &[
+                    "salah nomor", "ini siapa", "nomor salah",
+                    "ajak kenalan", "dapat nomor karena salah klik",
+                ],
+                ms: &[
+                    "salah nombor", "ini siapa", "nombor salah",
+                    "jom berkawan", "dapat nombor sebab salah tekan",
+                ],
+                tl: &[
+                    "maling numero", "sino ka", "mali ang numero",
+                    "magkaibigan tayo", "nakuha ko ang numero mula sa pagkakamali",
+                ],
+                km: &[
+                    "ខុសលេខ", "អ្នកជានរណា", "លេខខុស",
+                ],
+                zh: &["加错号了", "你是谁", "交个朋友吧", "号码加错了"],
+                other: &[],
+            },
+
+            IndicatorId::SubscriptionTrap => IndicatorKeywords {
+                indicator: *self,
+                en: &[
+                    "free trial", "trial ends", "auto-renew", "auto renew",
+                    "recurring payment", "monthly charge", "cancel anytime",
+                    "subscription activated", "membership fee",
+                    "trial expires", "will be charged", "renewal fee",
+                ],
+                vi: &[
+                    "dùng thử miễn phí", "tự động gia hạn", "phí hàng tháng",
+                    "phí thành viên", "gia hạn tự động",
+                ],
+                th: &[
+                    "ทดลองใช้ฟรี", "ต่ออายุอัตโนมัติ", "ค่ารายเดือน",
+                    "ค่าสมาชิก", "ต่ออายุอัตโนมัติ",
+                ],
+                id: &[
+                    "uji coba gratis", "perpanjang otomatis", "biaya bulanan",
+                    "biaya keanggotaan", "diperpanjang otomatis",
+                ],
+                ms: &[
+                    "percubaan percuma", "diperbaharui secara automatik", "caj bulanan",
+                    "yuran keahlian", "pembaharuan automatik",
+                ],
+                tl: &[
+                    "free trial", "auto-renew", "monthly charge",
+                    "membership fee", "awtomatik na mag-renew",
+                ],
+                km: &[
+                    "ទាក់ទងនឹងសេវាកម្ម", "ការបន្តស្វ័យប្រវត្តិ", "តម្លៃប្រចាំខែ",
+                ],
+                zh: &["免费试用", "自动续费", "月费", "会员费", "续订"],
+                other: &[],
+            },
+
+            IndicatorId::DeepfakeImpersonation => IndicatorKeywords {
+                indicator: *self,
+                en: &[
+                    "ai voice clone", "voice synthesis", "deepfake video",
+                    "ai generated voice", "cloned voice", "voice clone",
+                    "this is not a recording", "live video call",
+                    "video verification", "face verification",
+                ],
+                vi: &[
+                    "giọng nói ai", "video deepfake", "xác thực bằng video",
+                    "giọng nói nhân bản",
+                ],
+                th: &[
+                    "เลียนเสียง ai", "วิดีโอ deepfake", "ยืนยันด้วยวิดีโอ",
+                ],
+                id: &[
+                    "kloning suara ai", "video deepfake", "verifikasi video",
+                ],
+                ms: &[
+                    "klon suara ai", "video deepfake", "pengesahan video",
+                ],
+                tl: &[
+                    "clone ng boses ai", "deepfake video", "beripikasyon gamit ang video",
+                ],
+                km: &[
+                    "ការចម្លងសំឡេង ai", "វីដេអូ deepfake",
+                ],
+                zh: &["AI语音克隆", "深度伪造视频", "视频验证"],
+                other: &[],
+            },
         }
     }
 
@@ -1557,6 +1829,10 @@ impl IndicatorId {
             IndicatorId::RecoveryScam => "The message claims to be from a recovery service that can help you get back money you lost to a previous scam — this is itself a scam.",
             IndicatorId::GovernmentBenefitLure => "The message claims you qualify for a government grant, assistance scheme, or payout that you never applied for.",
             IndicatorId::FakeMarketplace => "The message offers branded products at suspiciously low prices with claims of being brand new and sealed, a common marketplace scam.",
+            IndicatorId::QRCodeScan => "The message asks you to scan a QR code, which may direct you to a malicious payment or phishing site.",
+            IndicatorId::WrongNumberPivot => "The sender claims to have reached you by mistake and tries to start a conversation, a common tactic in pig butchering and romance scams.",
+            IndicatorId::SubscriptionTrap => "The message mentions a free trial or subscription with hidden recurring charges that are difficult to cancel.",
+            IndicatorId::DeepfakeImpersonation => "The message involves AI-generated voice or video impersonation, used to trick you into believing you are speaking to a real person.",
         }
     }
 
@@ -1593,6 +1869,10 @@ impl IndicatorId {
             IndicatorId::RecoveryScam => 10,
             IndicatorId::GovernmentBenefitLure => 20,
             IndicatorId::FakeMarketplace => 22,
+            IndicatorId::QRCodeScan => 15,
+            IndicatorId::WrongNumberPivot => 20,
+            IndicatorId::SubscriptionTrap => 18,
+            IndicatorId::DeepfakeImpersonation => 10,
         }
     }
 }
@@ -1683,4 +1963,4 @@ impl IndicatorHit {
 }
 
 /// Ontology version identifier.
-pub const ONTOLOGY_VERSION: &str = "1.1.0";
+pub const ONTOLOGY_VERSION: &str = "1.2.0";

@@ -15,3 +15,5 @@ mod decision_trace_tests;
 mod calibration_tests;
 #[cfg(test)]
 mod sea_samples;
+#[cfg(test)]
+mod new_indicator_tests;

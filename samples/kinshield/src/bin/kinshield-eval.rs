@@ -271,13 +271,52 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
 
     println!("── Per-Language Performance ──");
-    println!("  {:<6} {:>8} {:>8} {:>8} {:>8} {:>10}", "Lang", "Detected", "Missed", "FalseP", "Correct", "Recall%");
+    println!("  {:<6} {:>8} {:>8} {:>8} {:>8} {:>10} {:>10}", "Lang", "Detected", "Missed", "FalseP", "Correct", "Recall%", "F1%");
     let mut lang_vec: Vec<_> = lang_stats.iter().collect();
     lang_vec.sort_by(|a, b| a.0.cmp(b.0));
     for (lang, (detected, missed, falsep, correct)) in lang_vec {
         let total_scam = detected + missed;
         let recall_pct = if total_scam > 0 { *detected as f64 / total_scam as f64 * 100.0 } else { 0.0 };
-        println!("  {:<6} {:>8} {:>8} {:>8} {:>8} {:>9.1}%", lang, detected, missed, falsep, correct, recall_pct);
+        let precision_pct = if *detected + *falsep > 0 { *detected as f64 / (*detected + *falsep) as f64 * 100.0 } else { 0.0 };
+        let f1_pct = if precision_pct + recall_pct > 0.0 { 2.0 * precision_pct * recall_pct / (precision_pct + recall_pct) } else { 0.0 };
+        println!("  {:<6} {:>8} {:>8} {:>8} {:>8} {:>9.1}% {:>9.1}%", lang, detected, missed, falsep, correct, recall_pct, f1_pct);
+    }
+    println!();
+
+    // Per-channel breakdown
+    println!("── Per-Channel Performance ──");
+    println!("  {:<12} {:>8} {:>8} {:>8} {:>8} {:>10}", "Channel", "Detected", "Missed", "FalseP", "Correct", "Recall%");
+    let scam_as_susp = results.iter().filter(|(e,p,_,_,_)| e=="scam" && p=="suspicious").count();
+    let safe_as_susp = results.iter().filter(|(e,p,_,_,_)| e=="safe" && p=="suspicious").count();
+    let channel_str = "sms"; // currently only SMS channel
+    let ch_detected = tp + scam_as_susp;
+    let ch_missed = fn_;
+    let ch_falsep = fp + safe_as_susp;
+    let ch_correct = tn;
+    let ch_recall = if ch_detected + ch_missed > 0 { ch_detected as f64 / (ch_detected + ch_missed) as f64 * 100.0 } else { 0.0 };
+    println!("  {:<12} {:>8} {:>8} {:>8} {:>8} {:>9.1}%", channel_str, ch_detected, ch_missed, ch_falsep, ch_correct, ch_recall);
+    println!();
+
+    // Per-scam-type breakdown (detected vs missed)
+    println!("── Per-Scam-Type Detection (detected vs missed) ──");
+    let mut type_stats: std::collections::HashMap<&str, (usize, usize)> = std::collections::HashMap::new();
+    for (i, _row) in rows.iter().enumerate() {
+        let (_, pred, _, scam_type, _) = &results[i];
+        let detected = pred == "scam" || pred == "suspicious";
+        // Use the expected label's scam type if available in the CSV, otherwise use predicted
+        let st = scam_type.unwrap_or("unknown");
+        let entry = type_stats.entry(st).or_insert((0, 0));
+        if detected {
+            entry.0 += 1;
+        } else {
+            entry.1 += 1;
+        }
+    }
+    let mut type_vec: Vec<_> = type_stats.iter().collect();
+    type_vec.sort_by(|a, b| b.1.cmp(a.1));
+    println!("  {:<25} {:>10} {:>10} {:>10}", "Scam Type", "Detected", "Missed", "Total");
+    for (st, (det, miss)) in type_vec {
+        println!("  {:<25} {:>10} {:>10} {:>10}", st, det, miss, det + miss);
     }
     println!();
 
@@ -292,10 +331,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Confusion matrix with suspicious as a separate category
     println!("── Confusion Matrix (scam vs safe, suspicious shown separately) ──");
     let scam_as_scam = tp;
-    let scam_as_susp = results.iter().filter(|(e,p,_,_,_)| e=="scam" && p=="suspicious").count();
     let scam_as_safe = fn_;
     let safe_as_scam = fp;
-    let safe_as_susp = results.iter().filter(|(e,p,_,_,_)| e=="safe" && p=="suspicious").count();
     let safe_as_safe = tn;
 
     println!("  {:<20} {:>10} {:>12} {:>10}", "", "Pred Scam", "Pred Susp", "Pred Safe");

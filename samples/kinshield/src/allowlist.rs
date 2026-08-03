@@ -54,29 +54,52 @@ pub const SENDER_BRAND_TAGS: &[&str] = &[
     "[bangkok bank]", "[bbl]", "[kasikorn]", "[kbank]", "[krungthai]",
     "[krungsri]", "[scb]", "[k plus]", "[kplus]", "[ttb]", "[bay]",
     "[tisco]", "[lh bank]", "[uob]", "[hsbc]",
+    "[tmb]", "[tbank]", "[bankthai]", "[tcrb]", "[baac]",
+    "[gsb]", "[government savings bank]", "[cimb thai]",
     // Thailand telco/services
     "[ais]", "[truemoney]", "[lalamove]", "[thai post]", "[thailand post]",
     "[grab]", "[shopee]", "[lazada]", "[line]", "[line man]",
+    "[dtac]", "[true]", "[true move]", "[truemove]", "[3bb]",
+    "[promptpay]", "[rabbit line pay]", "[shopeepay]",
     // Indonesia banks
     "[bca]", "[mandiri]", "[bni]", "[bri]", "[cimb niaga]", "[cimb]",
     "[permata]", "[danamon]", "[btn]", "[bsi]", "[mega]", "[bukopin]",
+    "[panin]", "[btpn]", "[btpn jenius]", "[jenius]", "[neo]",
+    "[bank jago]", "[jago]", "[alfamart]", "[indomaret]",
     // Indonesia e-commerce/telco/fintech
     "[tokopedia]", "[bukalapak]", "[telkomsel]", "[indosat]", "[xl]",
     "[gojek]", "[gopay]", "[ovo]", "[dana]", "[linkaja]", "[jne]",
     "[j&t]", "[pos indonesia]", "[shopee]", "[lazada]", "[grab]",
     "[blibli]", "[bukalapak]", "[sicepat]", "[jnt]",
+    "[shopeepay]", "[akulaku]", "[kredivo]", "[atome]",
+    "[tri]", "[3]", "[by.u]", "[mytelkomsel]",
     // Malaysia banks
     "[maybank]", "[cimb]", "[public bank]", "[rhb]", "[ambank]",
     "[bank rakyat]", "[hong leong]", "[hong leong bank]", "[affin]",
     "[bsn]", "[muamalat]", "[agrobank]",
+    "[kuwait finance]", "[kfh]", "[bank islam]", "[amislam]",
+    "[alliance bank]", "[abmb]",
     // Malaysia telco/services
     "[maxis]", "[celcom]", "[digi]", "[u mobile]", "[yes]",
     "[pos malaysia]", "[grab]", "[shopee]", "[lazada]", "[touch n go]",
     "[tng]", "[boost]", "[rm10]", "[rm50]",
+    "[unifi]", "[tm]", "[telekom]", "[aeon]", "[aeon credit]",
+    "[shopeepay]", "[setel]", "[riz]",
     // Philippines banks/services
     "[bdo]", "[bpi]", "[metrobank]", "[gcash]", "[globe]", "[smart]",
     "[lbc]", "[paymaya]", "[maya]", "[shopee]", "[lazada]", "[grab]",
     "[palawan]", "[cebuana]", "[mlhuillier]", "[western union]",
+    "[unionbank]", "[security bank]", "[chinabank]", "[pnb]",
+    "[rcbc]", "[psbank]", "[aub]", "[eastwest]",
+    "[sun cellular]", "[tnt]", "[globe]", "[pldt]",
+    "[foodpanda]", "[grabfood]", "[angkas]", "[joyride]",
+    // Cambodia banks/services
+    "[aba]", "[aba bank]", "[acleda]", "[acleda bank]", "[canadia]",
+    "[sathapana]", "[wing]", "[wing money]", "[true money]",
+    "[pi pay]", "[pipay]", "[smart]", "[cellcard]", "[metfone]",
+    "[seatech]", "[ly hour]", "[prasac]", "[amret]", "[hattha]",
+    // Cambodia e-commerce/delivery
+    "[nham24]", "[foodpanda]", "[grab]", "[lalamove]", "[deliveree]",
     // International delivery
     "[dhl]", "[fedex]", "[ups]", "[yodel]", "[royal mail]",
     "[jnt]", "[j&t]",
@@ -84,11 +107,122 @@ pub const SENDER_BRAND_TAGS: &[&str] = &[
     "[hsbc]", "[standard chartered]", "[citibank]", "[jpmorgan]",
     // Careers
     "[uob careers]", "[dbs careers]", "[ocbc careers]", "[grab careers]",
+    // Thailand government
+    "[rd]", "[revenue department]", "[dopa]", "[moj]", "[moe]",
+    "[moph]", "[dsi]", "[nacc]", "[oic]",
+    // Indonesia government
+    "[kemenkeu]", "[djp]", "[direktorat jenderal pajak]",
+    "[bkn]", "[kemenkes]", "[kemendikbud]", "[kemenhub]",
+    "[bnpt]", "[kominfo]", "[oss]", "[dinsos]",
+    // Malaysia government
+    "[lhdn]", "[jpn]", "[jpj]", "[kkm]", "[moe]",
+    "[jkm]", "[moha]", "[mod]", "[kpkt]",
+    // Philippines government
+    "[bir]", "[sss]", "[philhealth]", "[pag-ibig]", "[gsis]",
+    "[dswd]", "[doj]", "[comelec]", "[nbi]", "[pnp]",
+    // Cambodia government
+    "[gdt]", "[general department of taxation]", "[mef]",
+    "[moj]", "[moeys]", "[moh]", "[ncct]", "[cib]",
 ];
 
 /// Check if text contains a recognized sender brand tag.
 pub fn has_sender_brand_tag(lower_text: &str) -> bool {
     SENDER_BRAND_TAGS.iter().any(|tag| lower_text.contains(tag))
+}
+
+/// Known brand names that appear in legitimate messages without bracket format.
+/// Used to detect legitimate sender identity (e.g., "ACB: Quý khách...", "BIDV: Thông báo...").
+/// Short names (≤4 chars) require word-boundary or colon/space suffix to avoid false matches.
+pub const KNOWN_BRAND_NAMES: &[&str] = &[
+    // Vietnam banks
+    "vietcombank", "techcombank", "bidv", "mbbank", "mb bank",
+    "agribank", "vietinbank", "acb", "tpbank", "vpbank",
+    "sacombank", "eximbank", "hdbank", "ocb", "vib",
+    "nam a bank", "bac a bank", "lienvietpostbank", "pvcombank",
+    // Vietnam fintech/telco
+    "momo", "vnpay", "zalopay", "viettel money", "viettel pay",
+    "viettel", "vnpt", "mobifone", "vinaphone", "fpt",
+    "ghn", "ghtk", "tiki", "sendo", "winmart", "thegioididong",
+    "chotot", "shopee", "lazada", "grab",
+    // Vietnam government
+    "vneid", "dichvucong", "dvc", "gdt", "cucthue", "bhxh",
+    "bao hiem xa hoi", "bo tai chinh", "sbv",
+    // Thailand banks
+    "bangkok bank", "kasikorn", "kbank", "krungthai", "krungsri",
+    "scb", "k plus", "kplus", "ttb", "tisco", "lh bank",
+    "gsb", "baac", "tcrb",
+    // Thailand telco/services
+    "ais", "dtac", "truemove", "true move", "promptpay",
+    // Indonesia banks
+    "bca", "mandiri", "bni", "bri", "cimb niaga", "cimb",
+    "permata", "danamon", "btn", "bsi", "panin", "btpn",
+    "jenius", "bank jago", "jago",
+    // Indonesia e-commerce/telco
+    "tokopedia", "bukalapak", "telkomsel", "indosat", "xl",
+    "gojek", "gopay", "ovo", "dana", "linkaja",
+    "blibli", "sicepat", "shopeepay", "akulaku", "kredivo",
+    // Malaysia banks
+    "maybank", "cimb", "public bank", "rhb", "ambank",
+    "bank rakyat", "hong leong", "affin", "bsn", "agrobank",
+    "bank islam", "alliance bank",
+    // Malaysia telco/services
+    "maxis", "celcom", "digi", "u mobile", "unifi",
+    "touch n go", "tng", "boost", "aeon",
+    // Philippines banks/services
+    "bdo", "bpi", "metrobank", "gcash", "paymaya", "maya",
+    "unionbank", "security bank", "chinabank", "pnb", "rcbc",
+    "psbank",
+    // Philippines telco
+    "globe", "smart", "pldt",
+    // Cambodia banks/services
+    "aba bank", "aba", "acleda", "acleda bank", "canadia",
+    "wing", "wing money", "sathapana",
+    // International
+    "hsbc", "standard chartered", "citibank",
+    "dhl", "fedex", "ups",
+    "microsoft", "google", "apple", "netflix", "spotify",
+    "telegram", "whatsapp", "facebook", "instagram", "tiktok",
+];
+
+/// Check if text contains a known brand name (non-bracket format).
+/// For short brand names (≤4 chars), requires word-boundary or colon/space suffix
+/// to avoid false positive matches (e.g., "acb" won't match "transaction").
+pub fn has_known_brand_name(lower_text: &str) -> bool {
+    for brand in KNOWN_BRAND_NAMES {
+        if brand.len() <= 4 && brand.is_ascii() {
+            // Short ASCII brands need word-boundary matching
+            if word_boundary_brand_match(lower_text, brand) {
+                return true;
+            }
+        } else {
+            if lower_text.contains(brand) {
+                return true;
+            }
+        }
+    }
+    false
+}
+
+/// Check if a short brand name appears as a word (followed by colon, space, or word boundary).
+fn word_boundary_brand_match(lower_text: &str, brand: &str) -> bool {
+    let text = lower_text;
+    let mut search_start = 0;
+    while let Some(pos) = text[search_start..].find(brand) {
+        let abs_pos = search_start + pos;
+        let end_pos = abs_pos + brand.len();
+        // Check char before is not alphanumeric
+        let ok_before = abs_pos == 0
+            || !text[..abs_pos].chars().next_back().is_some_and(|c| c.is_alphanumeric());
+        // Check char after is colon, space, newline, or non-alphanumeric
+        let after_byte = end_pos;
+        let ok_after = after_byte >= text.len()
+            || !text[after_byte..].chars().next().is_some_and(|c| c.is_alphanumeric());
+        if ok_before && ok_after {
+            return true;
+        }
+        search_start = abs_pos + 1;
+    }
+    false
 }
 
 /// Legitimate domains that should not trigger `LinkSuspicious` on their own.
@@ -125,6 +259,12 @@ pub const ALLOWED_DOMAINS: &[&str] = &[
     "krungsri.com", "scb.co.th", "kplus.com", "ttb.co.th",
     "ais.co.th", "truemoney.com", "lalamove.com",
     "thailandpost.co.th",
+    "dtac.co.th", "truemove.co.th", "truemoveh.co.th",
+    "promptpay.co.th", "rabbitlinepay.com",
+    "tisco.co.th", "lhbank.co.th", "bay.co.th",
+    "gsb.or.th", "baac.or.th", "tcrb.co.th",
+    "rd.go.th", "dopa.go.th", "moph.go.th", "moj.go.th",
+    "nacc.go.th", "dsi.go.th",
     // Indonesia
     "bca.co.id", "bankmandiri.co.id", "bni.co.id", "bri.co.id",
     "cimbniaga.co.id", "permatabank.com", "bankdanamon.co.id",
@@ -132,6 +272,11 @@ pub const ALLOWED_DOMAINS: &[&str] = &[
     "gojek.com", "go-jek.com", "ovo.id", "dana.id", "linkaja.com",
     "jne.co.id", "jet.co.id", "posindonesia.co.id",
     "blibli.com", "sicepat.com",
+    "panin.co.id", "btpn.co.id", "jenius.com", "bankjago.co.id",
+    "bsi.co.id", "btn.co.id", "mega.co.id",
+    "shopeepay.co.id", "kredivo.com", "akulaku.com",
+    "kemenkeu.go.id", "pajak.go.id", "djp.go.id",
+    "bkn.go.id", "kemenkes.go.id", "kominfo.go.id",
     // Malaysia
     "maybank2u.com", "maybank.com", "cimbclicks.com", "cimb.com",
     "pbebank.com", "rhbgroup.com", "ambankgroup.com", "bankrakyat.com.my",
@@ -139,10 +284,24 @@ pub const ALLOWED_DOMAINS: &[&str] = &[
     "bsn.com.my", "muamalat.com.my", "agrobank.com.my",
     "maxis.com.my", "celcom.com.my", "digi.com.my",
     "pos.com.my", "tngdigital.com.my", "myboost.com.my",
+    "bankislam.com", "kfh.com.my", "alliancebank.com.my",
+    "aeoncredit.com.my", "unifi.com.my", "tm.com.my",
+    "lhdn.gov.my", "jpj.gov.my", "kkm.gov.my", "jkm.gov.my",
     // Philippines
     "bdo.com.ph", "bpi.com.ph", "metrobank.com.ph",
     "gcash.com", "globe.com.ph", "smart.com.ph",
     "lbcexpress.com", "paymaya.com", "mayabank.ph",
+    "unionbankph.com", "securitybank.com", "chinabank.ph",
+    "pnb.com.ph", "rcbc.com", "psbank.com.ph",
+    "bir.gov.ph", "sss.gov.ph", "philhealth.gov.ph",
+    "pagibigfund.gov.ph", "gsis.gov.ph", "dswd.gov.ph",
+    // Cambodia
+    "ababank.com", "aba.com.kh", "acledabank.com",
+    "canadiabank.com", "sathapana.com", "wingmoney.com",
+    "truemoney.com.kh", "pipay.com.kh", "smart.com.kh",
+    "cellcard.com", "metfone.com.kh",
+    "nham24.com", "lyhour.com", "prasac.com", "amret.com.kh",
+    "gdt.gov.kh", "mef.gov.kh", "moeys.gov.kh",
     // International
     "apple.com", "icloud.com", "microsoft.com", "live.com", "outlook.com",
     "google.com", "netflix.com", "spotify.com", "youtube.com", "youtu.be",
@@ -363,6 +522,21 @@ pub fn is_transaction_notification(lower: &str) -> bool {
     transaction_completed || received_notification || small_txn_alert
 }
 
+/// Check if a transaction notification is actually a scam.
+/// Messages that ask the user to return money, call a number, or visit a link
+/// after mentioning a "credited" transaction are scams, not notifications.
+fn is_transaction_scam_pattern(lower: &str) -> bool {
+    // "Credited by mistake" + ask to return/call = scam
+    (lower.contains("by mistake") || lower.contains("credited with"))
+        && (lower.contains("please call") || lower.contains("arrange the return")
+            || lower.contains("transfer back") || lower.contains("return the")
+            || lower.contains("send back"))
+    // Vietnamese: "chuyển nhầm" + ask to return = scam
+    || (lower.contains("chuyển nhầm") || lower.contains("chuyen nham"))
+        && (lower.contains("chuyển lại") || lower.contains("chuyen lai")
+            || lower.contains("trả lại") || lower.contains("tra lai"))
+}
+
 /// Legitimate charity organizations that send donation appeals.
 const LEGITIMATE_CHARITY_SENDERS: &[&str] = &[
     "[mttq", "mttq", "mặt trận tổ quốc", "mat tran to quoc",
@@ -437,7 +611,13 @@ pub fn is_bank_security_alert(lower: &str) -> bool {
         || lower.contains("giao dich bat thuong")
         || lower.contains("aktivitas mencurigakan")
         || lower.contains("aktivitas tidak wajar")
-        || lower.contains("กิจกรรมผิดปกติ");
+        || lower.contains("กิจกรรมผิดปกติ")
+        || lower.contains("ธุรกรรมผิดปกติ")
+        || lower.contains("aktiviti mencurigakan")
+        || lower.contains("aktiviti tidak biasa")
+        || lower.contains("kakaibang aktibidad")
+        || lower.contains("pinaghihinalaang aktibidad")
+        || lower.contains("សកម្មភាពខុសប្រក្រតី");
 
     // Account verification from known bank
     let has_bank_brand = lower.contains("vpbank") || lower.contains("vietcombank")
@@ -454,14 +634,34 @@ pub fn is_bank_security_alert(lower: &str) -> bool {
         || lower.contains("bca") || lower.contains("mandiri") || lower.contains("bni")
         || lower.contains("bri") || lower.contains("bdo") || lower.contains("bpi")
         || lower.contains("metrobank") || lower.contains("bangkok bank")
-        || lower.contains("kasikorn") || lower.contains("kbank");
+        || lower.contains("kasikorn") || lower.contains("kbank")
+        || lower.contains("krungthai") || lower.contains("krungsri")
+        || lower.contains("scb") || lower.contains("ttb")
+        || lower.contains("public bank") || lower.contains("rhb")
+        || lower.contains("ambank") || lower.contains("hong leong")
+        || lower.contains("bsn") || lower.contains("bank rakyat")
+        || lower.contains("unionbank") || lower.contains("security bank")
+        || lower.contains("chinabank") || lower.contains("pnb")
+        || lower.contains("rcbc") || lower.contains("psbank")
+        || lower.contains("danamon") || lower.contains("permata")
+        || lower.contains("bsi") || lower.contains("btn")
+        || lower.contains("panin") || lower.contains("btpn")
+        || lower.contains("aba bank") || lower.contains("aba]")
+        || lower.contains("acleda") || lower.contains("canadia")
+        || lower.contains("sathapana") || lower.contains("wing money")
+        || lower.contains("gcash") || lower.contains("paymaya") || lower.contains("maya");
 
     // Security alert patterns
     let has_security_pattern = lower.contains("an toàn") || lower.contains("an toan")
         || lower.contains("secure") || lower.contains("security")
         || lower.contains("bảo mật") || lower.contains("bao mat")
         || lower.contains("xác thực") || lower.contains("xac thuc")
-        || lower.contains("verify") || lower.contains("verification");
+        || lower.contains("verify") || lower.contains("verification")
+        || lower.contains("ความปลอดภัย") || lower.contains("ปลอดภัย")
+        || lower.contains("keamanan") || lower.contains("verifikasi")
+        || lower.contains("keselamatan") || lower.contains("seguridad")
+        || lower.contains("seguridad") || lower.contains("verify ang")
+        || lower.contains("សុវត្ថិភាព") || lower.contains("ផ្ទៀងផ្ទាត់");
 
     // Transaction review notification
     let is_transaction_review = lower.contains("đang được xem xét")
@@ -570,7 +770,23 @@ pub fn is_service_notification(lower: &str) -> bool {
     let has_brand = has_sender_brand_tag(lower);
 
     // Service expiry from known brand
-    (has_expiry || has_renewal) && (has_service || has_brand)
+    let is_service = (has_expiry || has_renewal) && (has_service || has_brand);
+
+    // Exclude scam patterns: urgent payment demand via link
+    let has_urgent_payment = lower.contains("nạp tiền ngay")
+        || lower.contains("nap tien ngay")
+        || lower.contains("pay now")
+        || lower.contains("pay immediately")
+        || lower.contains("trả trước trong vòng")
+        || lower.contains("tra truoc trong vong");
+    let has_link_ref = lower.contains("link sau") || lower.contains("link_ngắn")
+        || lower.contains("link ngan") || lower.contains("đường link")
+        || lower.contains("duong link") || lower.contains("link below");
+    let has_time_pressure = lower.contains("30 phút") || lower.contains("30 phut")
+        || lower.contains("within 30") || lower.contains("within 1 hour")
+        || lower.contains("trong vòng") || lower.contains("trong vong");
+
+    is_service && !(has_urgent_payment && (has_link_ref || has_time_pressure))
 }
 
 /// Patterns that indicate a legitimate job posting from a known company.
@@ -614,6 +830,8 @@ pub struct LegitimacyContext {
     pub is_delivery_notification: bool,
     /// Message contains a recognized sender brand tag.
     pub has_sender_brand_tag: bool,
+    /// Message contains a known brand name (non-bracket format, e.g. "ACB:", "BIDV:").
+    pub has_known_brand_name: bool,
     /// All URLs in the message are from allowlisted domains.
     pub all_urls_allowed: bool,
     /// Number of legitimacy signals detected (for scoring).
@@ -630,8 +848,10 @@ pub fn analyze_legitimacy(
     all_urls_allowed: bool,
 ) -> LegitimacyContext {
     let has_sender_brand_tag = has_sender_brand_tag(lower_text);
+    let has_known_brand_name = has_known_brand_name(lower_text);
     let is_security_notification = is_security_notification(lower_text);
-    let is_transaction_notification = is_transaction_notification(lower_text);
+    let is_transaction_notification = is_transaction_notification(lower_text)
+        && !is_transaction_scam_pattern(lower_text);
     let is_refund_notification = is_refund_notification(lower_text);
     let is_service_notification = is_service_notification(lower_text);
     let is_legitimate_job_posting = is_legitimate_job_posting(lower_text);
@@ -651,6 +871,9 @@ pub fn analyze_legitimacy(
     if is_bank_security_alert { signal_count += 1; }
     if is_delivery_notification { signal_count += 1; }
     if has_sender_brand_tag { signal_count += 1; }
+    // Note: has_known_brand_name is NOT counted in signal_count because scammers
+    // frequently mention brand names (Telegram, Facebook, Instagram) in their
+    // messages. It's only used in the targeted brand reduction in compute_risk_bucket.
     if has_urls && all_urls_allowed { signal_count += 1; }
 
     LegitimacyContext {
@@ -664,6 +887,7 @@ pub fn analyze_legitimacy(
         is_bank_security_alert,
         is_delivery_notification,
         has_sender_brand_tag,
+        has_known_brand_name,
         all_urls_allowed,
         signal_count,
     }

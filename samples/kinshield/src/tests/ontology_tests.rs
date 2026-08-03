@@ -4,7 +4,7 @@ use crate::ontology::{IndicatorId, IndicatorStrength, IndicatorCategory};
 
 #[test]
 fn test_indicator_count() {
-    assert_eq!(IndicatorId::all().len(), 29, "Should have exactly 29 indicators");
+    assert_eq!(IndicatorId::all().len(), 33, "Should have exactly 33 indicators");
 }
 
 #[test]

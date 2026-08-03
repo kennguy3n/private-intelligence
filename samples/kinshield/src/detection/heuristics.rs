@@ -62,6 +62,18 @@ pub fn detect_heuristics(text: &str, channel: Channel) -> Vec<IndicatorHit> {
         hits.push(hit);
     }
 
+    if let Some(hit) = detect_qr_code_pattern(&lower) {
+        hits.push(hit);
+    }
+
+    if let Some(hit) = detect_subscription_trap_pattern(&lower) {
+        hits.push(hit);
+    }
+
+    if let Some(hit) = detect_impersonation_pattern(&lower, channel) {
+        hits.push(hit);
+    }
+
     hits
 }
 
@@ -91,11 +103,112 @@ fn detect_conversation_format(lower: &str, channel: Channel) -> Option<Indicator
     }
 
     if prefixed_count >= 3 {
-        return Some(IndicatorHit {
-            id: IndicatorId::SenderAnomaly,
-            strength: IndicatorStrength::Medium,
-            match_count: prefixed_count,
-        });
+        // Only fire if the conversation also contains scam-like content.
+        // Conversation format alone is not suspicious — many legitimate
+        // messages use A:/B: format. Require at least one scam signal.
+        let has_scam_signal = lower.contains("investment")
+            || lower.contains("crypto")
+            || lower.contains("trading")
+            || lower.contains("bitcoin")
+            || lower.contains("forex")
+            || lower.contains("returns")
+            || lower.contains("work from home")
+            || lower.contains("earn money")
+            || lower.contains("part-time")
+            || lower.contains("hiring")
+            || lower.contains("recruiter")
+            || lower.contains("transfer")
+            || lower.contains("bank account")
+            || lower.contains("send money")
+            || lower.contains("wire")
+            || lower.contains("paypal")
+            || lower.contains("gift card")
+            || lower.contains("western union")
+            || lower.contains("deposit")
+            || lower.contains("refund")
+            || lower.contains("fee")
+            || lower.contains("otp")
+            || lower.contains("verification code")
+            || lower.contains("password")
+            || lower.contains("login")
+            || lower.contains("click the link")
+            || lower.contains("shortlink")
+            || lower.contains("bit.ly")
+            // Wrong-number pivot patterns (common scam opener in conversation format)
+            || lower.contains("wrong number")
+            || lower.contains("wrong person")
+            || lower.contains("texted the wrong")
+            || lower.contains("accidentally")
+            || lower.contains("got your number")
+            || lower.contains("found your number")
+            || lower.contains("dating app")
+            || lower.contains("singles group")
+            || lower.contains("resume")
+            || lower.contains("position")
+            || lower.contains("salary")
+            || lower.contains("reimburse")
+            || lower.contains("assessment")
+            || lower.contains("insurance claim")
+            // Vietnamese scam signals
+            || lower.contains("đầu tư")
+            || lower.contains("dau tu")
+            || lower.contains("chuyển khoản")
+            || lower.contains("chuyen khoan")
+            || lower.contains("việc làm")
+            || lower.contains("viec lam")
+            || lower.contains("tuyển dụng")
+            || lower.contains("tuyen dung")
+            || lower.contains("mã otp")
+            || lower.contains("ma otp")
+            || lower.contains("xác thực")
+            || lower.contains("xac thuc")
+            || lower.contains("hoàn tiền")
+            || lower.contains("hoan tien")
+            || lower.contains("phí")
+            || lower.contains("phi ")
+            // Vietnamese wrong-number / romance patterns
+            || lower.contains("nhầm số")
+            || lower.contains("nham so")
+            || lower.contains("nhắn nhầm")
+            || lower.contains("nhan nham")
+            || lower.contains("nhầm rồi")
+            || lower.contains("nham roi")
+            || lower.contains("đăng tin")
+            || lower.contains("dang tin")
+            // Vietnamese job/delivery scam signals
+            || lower.contains("lương")
+            || lower.contains("luong")
+            || lower.contains("fanpage")
+            || lower.contains("grant")
+            || lower.contains("viện phí")
+            || lower.contains("vien phi")
+            // Romance / social engineering
+            || lower.contains("nice to meet you")
+            || lower.contains("fate brought")
+            || lower.contains("let's be friends")
+            || lower.contains("can we be friends")
+            || lower.contains("làm bạn")
+            || lower.contains("lam ban")
+            // Thai
+            || lower.contains("การลงทุน")
+            || lower.contains("เทรด")
+            || lower.contains("โอนเงิน")
+            // Indonesian
+            || lower.contains("investasi")
+            || lower.contains("transfer")
+            || lower.contains("lowongan")
+            // Malay
+            || lower.contains("pelaburan")
+            || lower.contains("transfer")
+            || lower.contains("kerja");
+
+        if has_scam_signal {
+            return Some(IndicatorHit {
+                id: IndicatorId::SenderAnomaly,
+                strength: IndicatorStrength::Medium,
+                match_count: prefixed_count,
+            });
+        }
     }
 
     let _ = channel;
@@ -120,6 +233,8 @@ fn detect_wrong_number_pivot(lower: &str) -> Vec<IndicatorHit> {
         || normalized.contains("sorry, is this")
         || normalized.contains("accidentally")
         || normalized.contains("got your number from")
+        || normalized.contains("got your number by mistake")
+        // Note: removed standalone "by mistake" — too common in legitimate messages
         || normalized.contains("mutual friend gave me")
         || normalized.contains("added your number")
         || normalized.contains("found your number")
@@ -256,10 +371,12 @@ fn detect_wrong_number_pivot(lower: &str) -> Vec<IndicatorHit> {
 
     if !hits.is_empty() {
         hits.push(IndicatorHit {
-            id: IndicatorId::SenderAnomaly,
-            strength: IndicatorStrength::Low,
+            id: IndicatorId::WrongNumberPivot,
+            strength: IndicatorStrength::Medium,
             match_count: 1,
         });
+        // Only emit SenderAnomaly if there's an actual financial/investment/romance/job pivot.
+        // A wrong-number apology alone is not a sender anomaly.
     }
 
     hits
@@ -394,6 +511,156 @@ fn detect_sms_misspelling_patterns(lower: &str) -> Option<IndicatorHit> {
             id: IndicatorId::SenderAnomaly,
             strength: IndicatorStrength::Medium,
             match_count: misspelling_count,
+        });
+    }
+
+    None
+}
+
+/// Detect QR code patterns in text.
+///
+/// Catches messages that ask users to scan QR codes for payment, verification,
+/// or claiming rewards — a growing phishing vector (quishing).
+fn detect_qr_code_pattern(lower: &str) -> Option<IndicatorHit> {
+    let qr_keywords = [
+        "qr code", "scan qr", "scan to pay", "scan this code",
+        "scan here", "scan to receive", "scan to claim",
+        "scan to verify", "quishing",
+        // Multilingual
+        "mã qr", "quét mã qr", "quét để thanh toán",
+        "kode qr", "pindai qr", "scan qr",
+        "kod qr", "imbas qr",
+        "i-scan ang qr", "scan para bayad",
+        "คิวอาร์โค้ด", "สแกน qr",
+        "កូដ qr", "ស្កេន qr",
+        "二维码", "扫码",
+    ];
+
+    let mut count = 0;
+    for &kw in &qr_keywords {
+        if lower.contains(kw) {
+            count += 1;
+        }
+    }
+
+    if count > 0 {
+        // Check for payment/credential context to boost strength
+        let has_payment = lower.contains("pay") || lower.contains("payment")
+            || lower.contains("thanh toán") || lower.contains("bayar")
+            || lower.contains("จ่าย") || lower.contains("bayad");
+        let has_credential = lower.contains("verify") || lower.contains("confirm")
+            || lower.contains("xác thực") || lower.contains("verifikasi");
+
+        let strength = if has_payment || has_credential {
+            IndicatorStrength::High
+        } else {
+            IndicatorStrength::Medium
+        };
+
+        return Some(IndicatorHit {
+            id: IndicatorId::QRCodeScan,
+            strength,
+            match_count: count,
+        });
+    }
+
+    None
+}
+
+/// Detect subscription trap patterns.
+///
+/// Catches messages about free trials ending, auto-renewal charges,
+/// or subscription activations with hidden fees.
+fn detect_subscription_trap_pattern(lower: &str) -> Option<IndicatorHit> {
+    let trial_keywords = [
+        "free trial", "trial ends", "trial expires", "trial has ended",
+        "auto-renew", "auto renew", "recurring payment",
+        "monthly charge", "subscription activated",
+        "membership fee", "renewal fee", "will be charged",
+        // Multilingual
+        "dùng thử miễn phí", "tự động gia hạn",
+        "ทดลองใช้ฟรี", "ต่ออายุอัตโนมัติ",
+        "uji coba gratis", "perpanjang otomatis",
+        "percubaan percuma", "diperbaharui secara automatik",
+    ];
+
+    let mut count = 0;
+    for &kw in &trial_keywords {
+        if lower.contains(kw) {
+            count += 1;
+        }
+    }
+
+    if count >= 1 {
+        // Check for cancellation difficulty patterns
+        let has_cancel_barrier = lower.contains("call to cancel")
+            || lower.contains("cancel anytime")
+            || lower.contains("premium rate")
+            || lower.contains("hotline")
+            || lower.contains("cancel by calling");
+
+        let strength = if has_cancel_barrier || count >= 2 {
+            IndicatorStrength::High
+        } else {
+            IndicatorStrength::Medium
+        };
+
+        return Some(IndicatorHit {
+            id: IndicatorId::SubscriptionTrap,
+            strength,
+            match_count: count,
+        });
+    }
+
+    None
+}
+
+/// Detect impersonation patterns — official-sounding language without brand tags.
+///
+/// Catches messages that use authority-claiming language ("official",
+/// "department", "bureau") but lack any recognizable sender brand tag,
+/// which is a strong impersonation signal.
+fn detect_impersonation_pattern(lower: &str, channel: Channel) -> Option<IndicatorHit> {
+    let _ = channel;
+
+    let official_words = [
+        "official", "department", "bureau", "authority", "agency",
+        "directorate", "division", "bộ", "cục", "tổng cục",
+        "กรม", "หน่วยงาน",
+        "dinast", "direktorat", "instansi",
+        "jabatan", "agensi",
+        "kagawaran", "buró",
+    ];
+
+    let has_official = official_words.iter().any(|w| lower.contains(w));
+    if !has_official {
+        return None;
+    }
+
+    // Check for threat language that commonly accompanies impersonation
+    let has_threat = lower.contains("arrest") || lower.contains("warrant")
+        || lower.contains("legal action") || lower.contains("penalty")
+        || lower.contains("suspend") || lower.contains("deactivate")
+        || lower.contains("bắt") || lower.contains("khởi tố")
+        || lower.contains("จับ") || lower.contains("ดำเนินคดี")
+        || lower.contains("penangkapan") || lower.contains("tuntutan")
+        || lower.contains("denda") || lower.contains("saman");
+
+    // Check for urgency
+    let has_urgency = lower.contains("urgent") || lower.contains("immediately")
+        || lower.contains("within 24 hours") || lower.contains("deadline")
+        || lower.contains("khẩn cấp") || lower.contains("ด่วน")
+        || lower.contains("mendesak") || lower.contains("mamadali");
+
+    if has_threat || has_urgency {
+        return Some(IndicatorHit {
+            id: IndicatorId::AuthorityClaim,
+            strength: if has_threat && has_urgency {
+                IndicatorStrength::High
+            } else {
+                IndicatorStrength::Medium
+            },
+            match_count: 1,
         });
     }
 

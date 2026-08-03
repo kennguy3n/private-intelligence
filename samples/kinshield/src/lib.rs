@@ -72,7 +72,7 @@ pub use contribution_limits::{ContributionLimits, ContributionUsage, Contributio
 pub use privacy_budget::{PrivacyBudget, PrivacyBudgetStatus, SystemHealth};
 pub use privacy_settings::{PrivacySettings, EventRetention};
 pub use threat_intel::{ThreatIntelFeed, ScamCampaign, CampaignStatus, ThreatIntelReport};
-pub use allowlist::{LegitimacyContext, analyze_legitimacy, is_allowed_domain, has_sender_brand_tag};
+pub use allowlist::{LegitimacyContext, analyze_legitimacy, is_allowed_domain, has_sender_brand_tag, has_known_brand_name};
 pub use conversation::{ConversationTracker, TrustAdjustment, SenderContext, MessageRecord};
 pub use test_data::{TestCase, all_test_cases, cases_by_region, scam_cases, benign_cases};
 

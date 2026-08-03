@@ -53,6 +53,16 @@ const URL_SHORTENERS: &[&str] = &[
     "goo.gl", "fb.me", "wa.me", "tiny.pl",
     "t.hk", "reurl.cc", "lihi.cc", "psee.io",
     "0rz.tw", "moa.tw", "bitly.kr",
+    // SEA-specific shorteners
+    "shorturl.asia", "s.id", "tiny.cc",
+    "cutt.ly", "shorte.st", "clk.im",
+    "trib.al", "x.gd", "is.gd",
+    "v.gd", "qr.ae", "rurl.us",
+    "shrturl.net", "shorturl.net",
+    "ow.ly", "po.st", "lnk.to",
+    // Chinese/SEA shorteners
+    "dwz.cn", "url.cn", "t.cn",
+    "bitly.is", "tiny.ee",
 ];
 
 /// Suspicious TLDs commonly used in scam URLs.
@@ -65,6 +75,14 @@ const SUSPICIOUS_TLDS: &[&str] = &[
     ".vip", ".icu", ".buzz", ".fun", ".site", ".online",
     ".store", ".tech", ".space", ".live", ".media",
     ".info", ".biz", ".rest", ".bar", ".cam",
+    // Additional suspicious TLDs
+    ".click", ".link", ".direct", ".move",
+    ".quest", ".monster", ".sbs", ".autos",
+    ".rsvp", ".boats", ".homes", ".yachts",
+    ".lat", ".rip", ".makeup", ".skin",
+    ".hair", ".beauty", ".cyou", ".mom",
+    ".uno", ".fit", ".lol", ".wtf",
+    ".fail", ".oops", ".bond", ".kz",
 ];
 
 /// Regex to extract URLs from text (with http:// or https:// prefix).
@@ -85,6 +103,30 @@ static BARE_DOMAIN_RE: LazyLock<Regex> = LazyLock::new(|| {
 static IP_IN_URL_RE: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r"https?://\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}")
         .expect("invalid IP URL regex")
+});
+
+/// Regex to detect data: URIs (used to embed malicious payloads).
+static DATA_URI_RE: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new("data:(?:text/html|application/x-javascript|text/javascript)[,\"]")
+        .expect("invalid data URI regex")
+});
+
+/// Regex to detect javascript: protocol in URLs.
+static JS_PROTOCOL_RE: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r"javascript:\s*")
+        .expect("invalid javascript protocol regex")
+});
+
+/// Regex to detect punycode (IDN) domains — "xn--" prefix.
+static PUNYCODE_RE: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r"xn--[a-z0-9-]+")
+        .expect("invalid punycode regex")
+});
+
+/// Regex to detect port numbers in URLs (checked against standard ports in code).
+static PORT_IN_URL_RE: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r"https?://[^/]+:(\d{2,5})")
+        .expect("invalid port regex")
 });
 
 /// Extract all URLs from text, including bare domains without http:// prefix.
@@ -323,6 +365,57 @@ const KNOWN_BRANDS: &[(&str, &[&str])] = &[
     ("ninja van", &["ninjavan.co", "ninjavan.com"]),
     ("ninjavan", &["ninjavan.co", "ninjavan.com"]),
     ("mas", &["mas.gov.sg"]),
+    // Thailand additional
+    ("ttb", &["ttb.co.th"]),
+    ("tisco", &["tisco.co.th"]),
+    ("lh bank", &["lhbank.co.th"]),
+    ("lhbank", &["lhbank.co.th"]),
+    ("bay", &["bay.co.th"]),
+    ("gsb", &["gsb.or.th"]),
+    ("baac", &["baac.or.th"]),
+    ("tcrb", &["tcrb.co.th"]),
+    ("dtac", &["dtac.co.th"]),
+    ("truemove", &["truemove.co.th", "truemoveh.co.th"]),
+    ("promptpay", &["promptpay.co.th"]),
+    // Indonesia additional
+    ("bsi", &["bsi.co.id"]),
+    ("btn", &["btn.co.id"]),
+    ("panin", &["panin.co.id"]),
+    ("btpn", &["btpn.co.id"]),
+    ("jenius", &["jenius.com"]),
+    ("bank jago", &["bankjago.co.id"]),
+    ("jago", &["bankjago.co.id"]),
+    ("blibli", &["blibli.com"]),
+    ("sicepat", &["sicepat.com"]),
+    ("shopeepay", &["shopeepay.co.id"]),
+    ("kredivo", &["kredivo.com"]),
+    ("akulaku", &["akulaku.com"]),
+    // Malaysia additional
+    ("bank islam", &["bankislam.com"]),
+    ("hong leong", &["hongleong.com", "hongleongbank.com"]),
+    ("affin", &["affinbank.com.my"]),
+    ("bsn", &["bsn.com.my"]),
+    ("agrobank", &["agrobank.com.my"]),
+    ("alliance bank", &["alliancebank.com.my"]),
+    ("aeon", &["aeoncredit.com.my"]),
+    ("unifi", &["unifi.com.my"]),
+    ("touch n go", &["tngdigital.com.my"]),
+    ("tng", &["tngdigital.com.my"]),
+    // Philippines additional
+    ("unionbank", &["unionbankph.com"]),
+    ("security bank", &["securitybank.com"]),
+    ("chinabank", &["chinabank.ph"]),
+    ("pnb", &["pnb.com.ph"]),
+    ("rcbc", &["rcbc.com"]),
+    ("psbank", &["psbank.com.ph"]),
+    ("paymaya", &["paymaya.com"]),
+    ("maya", &["mayabank.ph"]),
+    // Cambodia
+    ("aba", &["ababank.com", "aba.com.kh"]),
+    ("acleda", &["acledabank.com"]),
+    ("canadia", &["canadiabank.com"]),
+    ("wing", &["wingmoney.com"]),
+    ("nham24", &["nham24.com"]),
 ];
 
 /// Action words commonly used in phishing URLs combined with brand names.
@@ -423,6 +516,7 @@ const PHISHING_LURE_WORDS: &[&str] = &[
     // Vietnamese lure words
     "hotro", "dangky", "nhanthuong", "khuyenmai", "tuyendung",
     "hoanthue", "trocap", "hocbong", "kichcau",
+    "cuutro", "cuu-tro", "tuthien", "tu-thien",
 ];
 
 /// Financial/payment words commonly used in phishing domains.
@@ -454,7 +548,8 @@ const SUSPICIOUS_DOMAIN_SUFFIXES: &[&str] = &[
     "-giahan", "-dangky", "-kichhoat",
 ];
 
-/// Check if two strings differ by at most 1 edit (insertion, deletion, or substitution).
+/// Check if two strings differ by at most 1 edit (insertion, deletion, substitution,
+/// or transposition of adjacent characters).
 fn is_close_typo(a: &str, b: &str) -> bool {
     let a_chars: Vec<char> = a.chars().collect();
     let b_chars: Vec<char> = b.chars().collect();
@@ -462,8 +557,22 @@ fn is_close_typo(a: &str, b: &str) -> bool {
 
     if la == lb {
         // Check substitution: at most 1 char differs
-        let diffs = a_chars.iter().zip(b_chars.iter()).filter(|(x, y)| x != y).count();
-        return diffs <= 1;
+        let diffs: Vec<usize> = a_chars.iter().zip(b_chars.iter())
+            .enumerate()
+            .filter(|(_, (x, y))| x != y)
+            .map(|(i, _)| i)
+            .collect();
+        if diffs.len() <= 1 {
+            return true;
+        }
+        // Check transposition: exactly 2 diffs that are adjacent and swapped
+        if diffs.len() == 2 && diffs[1] == diffs[0] + 1
+            && a_chars[diffs[0]] == b_chars[diffs[1]]
+            && a_chars[diffs[1]] == b_chars[diffs[0]]
+        {
+            return true;
+        }
+        return false;
     }
 
     if la.abs_diff(lb) == 1 {
@@ -672,6 +781,42 @@ pub fn analyze_urls(text: &str) -> Option<IndicatorHit> {
                 // and after_at also contains a dot (different destination)
                 if before_at.contains('.') && after_at.contains('.') {
                     suspicious_count += 2;
+                }
+            }
+        }
+
+        // Check for data: URI (malicious embedded content)
+        if DATA_URI_RE.is_match(&lower) {
+            suspicious_count += 2;
+        }
+
+        // Check for javascript: protocol (XSS attempt)
+        if JS_PROTOCOL_RE.is_match(&lower) {
+            suspicious_count += 2;
+        }
+
+        // Check for punycode/IDN domains (homoglyph attacks)
+        if PUNYCODE_RE.is_match(&lower) {
+            suspicious_count += 1;
+        }
+
+        // Check for non-standard port numbers
+        if let Some(caps) = PORT_IN_URL_RE.captures(&lower) {
+            if let Some(port_str) = caps.get(1) {
+                let port = port_str.as_str();
+                if port != "80" && port != "443" && port != "8080" && port != "8443" {
+                    suspicious_count += 1;
+                }
+            }
+        }
+
+        // Check for URL with credentials (user:pass@) — often used in phishing
+        if lower.contains("://") && lower.contains('@') {
+            let protocol_end = lower.find("://").unwrap_or(0) + 3;
+            if let Some(at_pos) = lower[protocol_end..].find('@') {
+                let cred_part = &lower[protocol_end..protocol_end + at_pos];
+                if cred_part.contains(':') && !cred_part.contains('.') {
+                    suspicious_count += 1;
                 }
             }
         }

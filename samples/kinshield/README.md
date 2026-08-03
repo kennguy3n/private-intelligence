@@ -4,27 +4,28 @@ A privacy-first scam detection engine that runs entirely on-device, protecting f
 
 ## Key Features
 
-- **25-indicator ontology** with SEA multi-language keyword detection (VI, TH, ID, MS, TL, KM, ZH, EN)
-- **15 scam type families** with Southeast Asia focus (bank impersonation, delivery scam, telco impersonation, etc.)
+- **33-indicator ontology** with SEA multi-language keyword detection (VI, TH, ID, MS, TL, KM, ZH, EN)
+- **30 scam type families** with Southeast Asia focus (bank impersonation, delivery scam, telco impersonation, pig butchering, fake QR code, subscription trap, etc.)
 - **Family construct** with per-member sensitivity thresholds, guardian alerts, and role-based protection
 - **Bounded decision traces** — privacy-preserving, no raw text transmitted
 - **Structured feedback** separating detection, classification, and explanation correctness
 - **On-device calibration** from local feedback history (no core model retraining)
 - **Report missed scam** mechanism for recall improvement
 - **Anti-manipulation** via contribution caps, label hierarchy, and robust aggregation
-- **URL analysis** — shortened URLs, IP addresses, suspicious TLDs, lookalike domains
+- **URL analysis** — shortened URLs, IP addresses, suspicious TLDs, lookalike domains, typosquatting, punycode/IDN detection, data URI/javascript protocol detection, non-standard ports, credential phishing patterns
 
 ## Architecture
 
 ```
 Input: (text, channel, language)
   │
-  ├─ Keyword detection (25 indicators × 8 languages)
-  ├─ URL analysis (suspicious link patterns)
+  ├─ Keyword detection (33 indicators × 8 languages)
+  ├─ URL analysis (suspicious link patterns, lookalike domains, QR codes, punycode)
   ├─ Embedding detection (e5-small, semantic indicators)
+  ├─ Heuristic detection (wrong-number pivot, QR code, subscription trap, impersonation)
   │
-  ├─ Risk scoring → 5-bucket quantization + monotonic constraints
-  ├─ Scam type classification → 15 families
+  ├─ Risk scoring → 5-bucket quantization + monotonic constraints + legitimacy signals
+  ├─ Scam type classification → 30 families (scored classification)
   │
   └─ DetectionResult + DecisionTrace → AggregationBuffer
 ```
@@ -80,26 +81,28 @@ family.add_member(
 engine.set_family(family);
 ```
 
-## Indicator Ontology (25 indicators)
+## Indicator Ontology (33 indicators, v1.2.0)
 
 | Category | Indicators |
 |----------|-----------|
 | Psychological | urgency, authority_claim, threat_legal, threat_account, limited_time_offer |
-| Financial | financial_request, promise_high_return, crypto_scheme, gift_card, bank_transfer, tax_penalty |
+| Financial | financial_request, promise_high_return, crypto_scheme, gift_card, bank_transfer, tax_penalty, subscription_trap |
 | Credential | credential_request, verification_request |
-| Technical | remote_access, link_suspicious |
+| Technical | remote_access, link_suspicious, qr_code_scan, deepfake_impersonation |
 | Sender | sender_anomaly |
-| Social | romance_grooming, charity_appeal, family_emergency |
-| E-commerce | delivery_lure |
+| Social | romance_grooming, charity_appeal, family_emergency, wrong_number_pivot |
+| E-commerce | delivery_lure, fake_marketplace |
 | Lottery | prize_lure |
 | Employment | job_offer |
-| Lure | free_gift |
+| Lure | free_gift, government_benefit_lure |
 | Contact | phone_callback |
 | PII | personal_info_request |
+| Extortion | sextortion |
+| Recovery | recovery_scam |
 
 Each indicator has keyword sets in 8 languages. Strength is quantized to Low/Medium/High.
 
-## Scam Type Taxonomy (15 families, SEA-focused)
+## Scam Type Taxonomy (30 families, SEA-focused)
 
 | Type | SEA Relevance |
 |------|---------------|
@@ -118,6 +121,23 @@ Each indicator has keyword sets in 8 languages. Strength is quantized to Low/Med
 | social_media_takeover | High in PH, ID, VN |
 | loan_scam | Rising in VN, MY, TH |
 | parcel_customs | SEA-specific |
+| pig_butchering | Major threat in VN, TH, CN |
+| money_mule | Rising across SEA |
+| sextortion | Cross-regional |
+| recovery_scam | Targets prior victims |
+| customer_service_scam | Shopee/Lazada impersonation |
+| sim_swap_fraud | Growing in VN, TH |
+| utility_impersonation | Common in PH, VN |
+| account_takeover | Cross-regional |
+| property_rental | Rising in SG, VN |
+| business_email_compromise | Corporate targeting |
+| fake_qr_code | Emerging in TH, VN, MY |
+| subscription_trap | Growing across SEA |
+| social_media_impersonation | Instagram/Facebook cloning |
+| toll_road_scam | VN-specific |
+| other_unknown | Fallback |
+
+Classification uses a scored approach: each scam type receives a score based on which indicators are present and text keyword boosts, with the highest-scoring type selected. This reduces `other_unknown` fallbacks.
 
 ## Privacy
 
@@ -179,3 +199,6 @@ cargo test -p kinshield
 - Federated calibration training
 - Delayed local confirmation
 - Honeypot integration for holdout validation
+- Deepfake audio/video detection (beyond keyword matching)
+- Real-time QR code image analysis
+- Cross-message conversation pattern tracking
